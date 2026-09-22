@@ -1,0 +1,125 @@
+/* CIMI — component styles layered on top of the vendored Tailwind runtime.
+   Plain CSS so the interface still renders sensibly even if the Tailwind
+   runtime is slow to boot. */
+
+:root {
+  --ink-900: #080b12;
+  --ink-850: #0c111b;
+  --ink-800: #111827;
+  --ink-700: #1b2231;
+  --brand-400: #5eead4;
+  --brand-500: #14b8a6;
+  --danger-400: #f87171;
+  --warn-400: #fbbf24;
+  --safe-400: #34d399;
+}
+
+html, body { background: var(--ink-900); color: #e2e8f0; }
+body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; margin: 0; }
+* { box-sizing: border-box; }
+
+/* --- form controls ------------------------------------------------------ */
+.field {
+  width: 100%;
+  border-radius: 0.5rem;
+  background: var(--ink-800);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0.6rem 0.75rem;
+  font-size: 0.875rem;
+  color: #f1f5f9;
+  outline: none;
+  transition: border-color .15s, box-shadow .15s;
+}
+.field::placeholder { color: #475569; }
+.field:focus {
+  border-color: var(--brand-500);
+  box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.18);
+}
+textarea.field { resize: vertical; min-height: 7rem; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.8rem; line-height: 1.5; }
+select.field { appearance: none; background-image: linear-gradient(45deg, transparent 50%, #64748b 50%), linear-gradient(135deg, #64748b 50%, transparent 50%); background-position: calc(100% - 18px) 55%, calc(100% - 13px) 55%; background-size: 5px 5px, 5px 5px; background-repeat: no-repeat; padding-right: 2rem; }
+
+/* --- buttons ------------------------------------------------------------ */
+.btn-primary {
+  display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+  border-radius: .5rem; padding: .6rem 1rem;
+  background: var(--brand-600, #0d9488); color: #041614;
+  font-size: .875rem; font-weight: 600; border: 0; cursor: pointer;
+  background-image: linear-gradient(180deg, #14b8a6, #0d9488);
+  transition: filter .15s, opacity .15s;
+}
+.btn-primary:hover:not(:disabled) { filter: brightness(1.08); }
+.btn-primary:disabled { opacity: .55; cursor: not-allowed; }
+
+.btn-ghost {
+  display: inline-flex; align-items: center; gap: .4rem;
+  border-radius: .5rem; padding: .45rem .75rem;
+  background: var(--ink-800); color: #cbd5e1;
+  border: 1px solid rgba(255,255,255,.1); cursor: pointer;
+  font-size: .8rem; font-weight: 500;
+  transition: background .15s, color .15s;
+}
+.btn-ghost:hover:not(:disabled) { background: var(--ink-700); color: #fff; }
+.btn-ghost:disabled { opacity: .5; cursor: not-allowed; }
+
+/* --- auth tabs ---------------------------------------------------------- */
+.auth-tab { background: transparent; color: #94a3b8; border: 0; cursor: pointer; transition: background .15s, color .15s; }
+.auth-tab[aria-selected="true"] { background: var(--ink-700); color: #fff; }
+
+/* --- navigation --------------------------------------------------------- */
+.nav-item {
+  display: flex; align-items: center; gap: .7rem; width: 100%;
+  padding: .6rem .75rem; border-radius: .55rem;
+  font-size: .8125rem; font-weight: 500; color: #94a3b8;
+  background: transparent; border: 0; cursor: pointer; text-align: left;
+  transition: background .15s, color .15s;
+}
+.nav-item:hover { background: rgba(255,255,255,.04); color: #e2e8f0; }
+.nav-item.active { background: rgba(20,184,166,.12); color: var(--brand-400); box-shadow: inset 2px 0 0 var(--brand-500); }
+.nav-icon { height: 1.05rem; width: 1.05rem; flex-shrink: 0; }
+
+/* --- cards -------------------------------------------------------------- */
+.card { background: var(--ink-850); border: 1px solid rgba(255,255,255,.08); border-radius: .9rem; }
+.card-pad { padding: 1.15rem; }
+.card-title { font-size: .8rem; font-weight: 600; color: #f1f5f9; letter-spacing: .01em; }
+.card-sub { font-size: .7rem; color: #64748b; margin-top: .15rem; }
+
+/* --- verdict pills ------------------------------------------------------ */
+.pill { display: inline-flex; align-items: center; gap: .35rem; border-radius: 999px; padding: .15rem .55rem; font-size: .68rem; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+.pill-malicious { background: rgba(239,68,68,.14); color: var(--danger-400); border: 1px solid rgba(239,68,68,.3); }
+.pill-suspicious { background: rgba(245,158,11,.14); color: var(--warn-400); border: 1px solid rgba(245,158,11,.3); }
+.pill-clean { background: rgba(16,185,129,.14); color: var(--safe-400); border: 1px solid rgba(16,185,129,.3); }
+.pill-unknown { background: rgba(148,163,184,.12); color: #94a3b8; border: 1px solid rgba(148,163,184,.25); }
+.pill-sim { background: rgba(148,163,184,.1); color: #94a3b8; border: 1px dashed rgba(148,163,184,.4); }
+
+/* --- tables ------------------------------------------------------------- */
+.tbl { width: 100%; border-collapse: collapse; font-size: .78rem; }
+.tbl th { text-align: left; font-weight: 600; color: #64748b; font-size: .68rem; text-transform: uppercase; letter-spacing: .06em; padding: .55rem .7rem; border-bottom: 1px solid rgba(255,255,255,.08); white-space: nowrap; }
+.tbl td { padding: .6rem .7rem; border-bottom: 1px solid rgba(255,255,255,.05); color: #cbd5e1; vertical-align: middle; }
+.tbl tbody tr:hover td { background: rgba(255,255,255,.02); }
+.mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .75rem; }
+.truncate-cell { max-width: 22rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* --- misc --------------------------------------------------------------- */
+.skeleton { background: linear-gradient(90deg, rgba(255,255,255,.04) 25%, rgba(255,255,255,.09) 37%, rgba(255,255,255,.04) 63%); background-size: 400% 100%; animation: shimmer 1.4s ease infinite; border-radius: .5rem; }
+@keyframes shimmer { 0% { background-position: 100% 0; } 100% { background-position: 0 0; } }
+
+.spinner { display:inline-block; width: 1rem; height: 1rem; border: 2px solid rgba(255,255,255,.25); border-top-color: #fff; border-radius: 50%; animation: spin .7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.toast { border-radius: .6rem; padding: .7rem .9rem; font-size: .8rem; box-shadow: 0 10px 30px rgba(0,0,0,.45); border: 1px solid rgba(255,255,255,.1); background: var(--ink-800); color: #e2e8f0; animation: slide-in .2s ease; }
+.toast-error { border-color: rgba(239,68,68,.4); color: #fecaca; }
+.toast-success { border-color: rgba(16,185,129,.4); color: #bbf7d0; }
+@keyframes slide-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+.tag { display: inline-block; border-radius: .35rem; padding: .1rem .4rem; font-size: .66rem; background: rgba(255,255,255,.06); color: #94a3b8; margin: .1rem .15rem 0 0; }
+
+.scorebar { height: .4rem; border-radius: 999px; background: rgba(255,255,255,.07); overflow: hidden; }
+.scorebar > span { display: block; height: 100%; border-radius: 999px; }
+
+::-webkit-scrollbar { width: 9px; height: 9px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #1f2937; border-radius: 6px; }
+::-webkit-scrollbar-thumb:hover { background: #334155; }
+
+.flex-center { display: flex; align-items: center; justify-content: center; }
+#login-view.is-visible { display: flex; }

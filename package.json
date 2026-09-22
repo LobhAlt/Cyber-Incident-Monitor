@@ -1,0 +1,33 @@
+{
+  "name": "cimi",
+  "version": "1.0.0",
+  "description": "Cyber Incident Monitor in India (CIMI) - a real-time, STIX 2.1-compliant threat intelligence aggregation platform for Indian cyberspace",
+  "main": "server.js",
+  "type": "commonjs",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "seed": "node scripts/seed.js",
+    "test": "node tests/smoke.test.js"
+  },
+  "keywords": [
+    "threat-intelligence",
+    "stix",
+    "cert-in",
+    "soc",
+    "ioc",
+    "cybersecurity"
+  ],
+  "author": "Lobh Dhomne, Riya Adhe, Vaishnavi Rokade",
+  "license": "MIT",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "express-rate-limit": "^7.4.0",
+    "helmet": "^7.1.0"
+  }
+}
