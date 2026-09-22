@@ -1,0 +1,47 @@
+# CIMI — one-command deployment.
+#
+#   1. cp .env.example .env   (fill in API keys; optionally DOMAIN)
+#   2. docker compose up -d                 → http://<server>:3000
+#      docker compose --profile tls up -d   → https://<DOMAIN> with automatic certificates
+#
+# All state persists in the named volumes; the container restarts automatically.
+
+services:
+  cimi:
+    build: .
+    image: cimi:latest
+    container_name: cimi
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATA_DIR: /app/data
+    volumes:
+      - cimi-data:/app/data
+    ports:
+      - "${HOST_PORT:-3000}:3000"
+
+  # Optional: automatic HTTPS reverse proxy (Let's Encrypt). Requires DOMAIN in .env
+  # and ports 80/443 pointed at this host.
+  caddy:
+    image: caddy:2-alpine
+    container_name: cimi-caddy
+    profiles: ["tls"]
+    restart: unless-stopped
+    depends_on:
+      - cimi
+    environment:
+      DOMAIN: ${DOMAIN:-localhost}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+
+volumes:
+  cimi-data:
+  caddy-data:
+  caddy-config:

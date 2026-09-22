@@ -1,5 +1,6 @@
 'use strict';
 
+const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 
@@ -16,18 +17,44 @@ function int(value, fallback) {
 }
 
 const ROOT = path.join(__dirname, '..', '..');
+const DATA_DIR = process.env.DATA_DIR
+  ? path.resolve(process.env.DATA_DIR)
+  : path.join(ROOT, 'data');
+
+/**
+ * JWT signing secret. Explicit JWT_SECRET wins; otherwise a random secret is
+ * generated ONCE and persisted under the data directory, so sessions survive
+ * restarts and redeploys without any manual configuration.
+ */
+function resolveJwtSecret() {
+  const fromEnv = (process.env.JWT_SECRET || '').trim();
+  if (fromEnv && fromEnv !== 'change-me-to-a-long-random-string') return fromEnv;
+
+  const file = path.join(DATA_DIR, 'jwt.secret');
+  try {
+    const existing = fs.readFileSync(file, 'utf8').trim();
+    if (existing.length >= 32) return existing;
+  } catch {
+    /* not there yet */
+  }
+  const generated = crypto.randomBytes(48).toString('hex');
+  try {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+    fs.writeFileSync(file, generated, { encoding: 'utf8', mode: 0o600 });
+  } catch {
+    /* read-only filesystem: fall back to a per-process secret */
+  }
+  return generated;
+}
 
 const config = {
   root: ROOT,
-  dataDir: path.join(ROOT, 'data'),
+  dataDir: DATA_DIR,
   publicDir: path.join(ROOT, 'public'),
   port: int(process.env.PORT, 3000),
   env: process.env.NODE_ENV || 'development',
 
-  jwtSecret:
-    process.env.JWT_SECRET && process.env.JWT_SECRET !== 'change-me-to-a-long-random-string'
-      ? process.env.JWT_SECRET
-      : crypto.randomBytes(48).toString('hex'),
+  jwtSecret: resolveJwtSecret(),
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '8h',
 
   defaultAdmin: {

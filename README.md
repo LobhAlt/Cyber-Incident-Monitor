@@ -78,6 +78,64 @@ Set `FORCE_DEMO_MODE=true` to force the simulator even when keys are present.
 
 ---
 
+## 2b. Deployment — set up once, then forget it
+
+CIMI is fully self-contained: one container, one persistent volume, no database.
+Nothing needs to be re-done after the first setup — the admin account, the JWT signing
+secret and all history live in the volume and survive restarts, reboots and image updates.
+
+### Option A — Docker Compose (recommended, any VPS)
+
+```bash
+git clone <this repo> cimi && cd cimi
+cp .env.example .env          # add your API keys; change DEFAULT_ADMIN_PASSWORD
+docker compose up -d          # → http://<server-ip>:3000
+```
+
+For a public hostname with **automatic HTTPS** (Let's Encrypt), point your domain's A
+record at the server, set `DOMAIN=cimi.example.com` in `.env`, and start the TLS profile
+instead:
+
+```bash
+docker compose --profile tls up -d     # → https://cimi.example.com
+```
+
+Certificates are obtained and renewed automatically by Caddy. The container restarts on
+crash and on reboot (`restart: unless-stopped`).
+
+Updating later is two commands: `git pull && docker compose up -d --build`.
+
+Already running nginx/Apache on the same host? Skip the `tls` profile and add a
+`proxy_pass http://127.0.0.1:3000;` location to your existing site — the app already
+sets `trust proxy`.
+
+### Option B — Render / Railway / Fly.io
+
+These platforms detect the `Dockerfile` automatically. Set the environment variables
+from `.env.example` in the platform's dashboard and attach a persistent disk mounted at
+`/app/data`. Without a persistent disk the store resets on every deploy.
+
+### Option C — bare Node.js with a process manager
+
+```bash
+npm ci --omit=dev
+npm i -g pm2
+pm2 start server.js --name cimi && pm2 save && pm2 startup
+```
+
+### What persists where
+
+| Item | Location (in the volume / `data/`) |
+|---|---|
+| Analyst accounts, MFA secrets | `users.json` |
+| Lookup history, log reports | `ioc_history.json`, `log_reports.json` |
+| JWT signing secret (auto-generated once) | `jwt.secret` |
+
+Back up the volume (`docker run --rm -v cimi-data:/d -v $PWD:/b alpine tar czf /b/cimi-backup.tgz /d`)
+and you have everything.
+
+---
+
 ## 3. Architecture
 
 Three tiers. The frontend never talks to an external API: every request is proxied,
@@ -289,6 +347,7 @@ cimi/
 ├── server.js                    # boot, scheduler, graceful shutdown
 ├── package.json
 ├── .env.example
+├── Dockerfile · docker-compose.yml · Caddyfile   # one-command deployment
 ├── src/
 │   ├── app.js                   # Express wiring, Helmet CSP, rate limits
 │   ├── config/index.js          # typed config from .env
@@ -344,7 +403,7 @@ cimi/
 | `EADDRINUSE` | Port 3000 is taken — set `PORT=3001` in `.env`. |
 | All sources show `sim` | No API keys in `.env`. Expected; add keys to go live. |
 | CERT-In shows "degraded" | The endpoint is rate-limiting or blocking. The offline set is shown; try `?refresh=true` later. |
-| Signed out after restart | `JWT_SECRET` is still the placeholder, so a fresh random secret is generated at boot. Set a real one. |
+| Signed out after restart | The `data/` directory (which holds the auto-generated `jwt.secret`) was wiped or is not on a persistent volume. |
 | VirusTotal returns "rate limit exceeded" | Free tier is 4 req/min. Caching mitigates it; wait a minute. |
 
 ---

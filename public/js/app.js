@@ -25,6 +25,29 @@
     settings:    { title: 'Settings',            sub: 'Account, multi-factor authentication and platform status' },
   };
 
+  // ======================= theme =======================
+
+  var THEME_KEY = 'cimi-theme';
+
+  function currentTheme() {
+    return document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+  }
+
+  function applyTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+    try { localStorage.setItem(THEME_KEY, theme); } catch (e) { /* private mode */ }
+    $$('[data-theme-toggle]').forEach(function (btn) {
+      btn.title = theme === 'light' ? 'Switch to dark theme' : 'Switch to light theme';
+      btn.setAttribute('aria-label', btn.title);
+    });
+  }
+
+  function toggleTheme() {
+    applyTheme(currentTheme() === 'light' ? 'dark' : 'light');
+    // SVG charts bake their colours in at render time — redraw the open page.
+    if (state.user && !$('#app-view').classList.contains('hidden')) renderPage();
+  }
+
   // ======================= helpers =======================
 
   function $(sel, root) { return (root || document).querySelector(sel); }
@@ -89,7 +112,7 @@
   function kpiTile(label, value, hint, accent) {
     return '<div class="card card-pad">' +
       '<p class="text-[11px] uppercase tracking-wider text-slate-500">' + esc(label) + '</p>' +
-      '<p class="mt-1.5 text-2xl font-semibold tabular-nums" style="color:' + (accent || '#f1f5f9') + '">' + esc(value) + '</p>' +
+      '<p class="mt-1.5 text-2xl font-semibold tabular-nums" style="color:' + (accent || C.PALETTE.label) + '">' + esc(value) + '</p>' +
       (hint ? '<p class="text-[11px] text-slate-600 mt-0.5">' + esc(hint) + '</p>' : '') +
       '</div>';
   }
@@ -839,7 +862,7 @@
       kpiTile('Unique indicators', e.totalUnique, e.ips + ' IP · ' + e.domains + ' domain · ' + e.urls + ' URL · ' + e.hashes + ' hash') +
       kpiTile('Screened', report.screenedCount, report.notScreened ? report.notScreened + ' not screened (limit ' + report.screenLimit + ')' : 'all within limit', C.PALETTE.accent) +
       kpiTile('Flagged', s.malicious + s.suspicious, s.malicious + ' malicious · ' + s.suspicious + ' suspicious',
-        (s.malicious ? C.PALETTE.malicious : s.suspicious ? C.PALETTE.suspicious : '#f1f5f9')) +
+        (s.malicious ? C.PALETTE.malicious : s.suspicious ? C.PALETTE.suspicious : C.PALETTE.label)) +
       '</div>';
 
     var findings = card('Screening results', report.fileName + ' · ' + fmtDate(report.analysedAt),
@@ -1102,6 +1125,8 @@
     $('#sidebar-toggle').addEventListener('click', openSidebar);
     $('#sidebar-backdrop').addEventListener('click', closeSidebar);
     $('#refresh-btn').addEventListener('click', function () { renderPage(); });
+    $$('[data-theme-toggle]').forEach(function (btn) { btn.addEventListener('click', toggleTheme); });
+    applyTheme(currentTheme());
 
     window.addEventListener('hashchange', function () {
       var page = location.hash.replace('#', '');

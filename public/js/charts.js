@@ -4,14 +4,25 @@
 (function (global) {
   'use strict';
 
+  /* Chart colours come from the active theme's CSS variables (css/app.css),
+     read at render time so a theme switch followed by a re-render recolours
+     every chart. */
+  function cssVar(name, fallback) {
+    try {
+      var v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+      return v || fallback;
+    } catch (e) { return fallback; }
+  }
   var PALETTE = {
-    malicious: '#f87171',
-    suspicious: '#fbbf24',
-    clean: '#34d399',
-    unknown: '#94a3b8',
-    accent: '#5eead4',
-    grid: 'rgba(255,255,255,0.07)',
-    axis: '#64748b',
+    get malicious()  { return cssVar('--chart-malicious', '#f87171'); },
+    get suspicious() { return cssVar('--chart-suspicious', '#fbbf24'); },
+    get clean()      { return cssVar('--chart-clean', '#34d399'); },
+    get unknown()    { return cssVar('--chart-unknown', '#94a3b8'); },
+    get accent()     { return cssVar('--chart-accent', '#ef4444'); },
+    get grid()       { return cssVar('--chart-grid', 'rgba(255,255,255,0.07)'); },
+    get axis()       { return cssVar('--chart-axis', '#64748b'); },
+    get label()      { return cssVar('--chart-label', '#f1f5f9'); },
+    get nodeStroke() { return cssVar('--chart-node-stroke', '#0c111b'); },
   };
 
   function esc(value) {
@@ -106,7 +117,7 @@
       angle = end;
     });
 
-    parts.push('<text x="' + cx + '" y="' + (cy - 2) + '" text-anchor="middle" font-size="26" font-weight="600" fill="#f1f5f9">' + total + '</text>');
+    parts.push('<text x="' + cx + '" y="' + (cy - 2) + '" text-anchor="middle" font-size="26" font-weight="600" fill="' + PALETTE.label + '">' + total + '</text>');
     parts.push('<text x="' + cx + '" y="' + (cy + 16) + '" text-anchor="middle" font-size="10" fill="' + PALETTE.axis + '">' +
       esc(options.caption || 'lookups') + '</text>');
 
@@ -210,9 +221,9 @@
       var color = PALETTE[n.verdict] || PALETTE.unknown;
       var r = 7 + (n.score || 0) / 14;
       parts.push('<g><circle cx="' + p.x.toFixed(1) + '" cy="' + p.y.toFixed(1) + '" r="' + r.toFixed(1) +
-        '" fill="' + color + '" fill-opacity="0.85" stroke="#0c111b" stroke-width="2"><title>' +
+        '" fill="' + color + '" fill-opacity="0.85" stroke="' + PALETTE.nodeStroke + '" stroke-width="2"><title>' +
         esc(n.id + ' — ' + n.verdict + ' (' + n.score + '/100)') + '</title></circle>' +
-        '<text x="' + p.x.toFixed(1) + '" y="' + (p.y + r + 11).toFixed(1) + '" text-anchor="middle" font-size="9" fill="#94a3b8">' +
+        '<text x="' + p.x.toFixed(1) + '" y="' + (p.y + r + 11).toFixed(1) + '" text-anchor="middle" font-size="9" fill="' + PALETTE.axis + '">' +
         esc(n.id.length > 22 ? n.id.slice(0, 20) + '…' : n.id) + '</text></g>');
     });
 
