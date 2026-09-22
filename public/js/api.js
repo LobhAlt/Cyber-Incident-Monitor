@@ -1,4 +1,4 @@
-/* CIMI — thin REST client with session-token handling. */
+/* CIMI thin REST client with session-token handling. */
 (function (global) {
   'use strict';
 
@@ -12,7 +12,7 @@
     try {
       if (value === null) global.localStorage.removeItem(key);
       else global.localStorage.setItem(key, value);
-    } catch (e) { /* private mode — session stays in memory only */ }
+    } catch (e) { /* private mode: session stays in memory only */ }
   }
 
   var memoryToken = null;

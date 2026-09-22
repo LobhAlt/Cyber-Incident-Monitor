@@ -34,9 +34,17 @@ router.post(
   '/register',
   loginLimiter,
   asyncHandler(async (req, res) => {
-    const { username, password } = req.body || {};
+    if (!config.allowRegistration) {
+      return res.status(403).json({ error: 'Self-service registration is disabled on this instance' });
+    }
+    const { username, password, website } = req.body || {};
+    // Honeypot: the signup form has a hidden "website" field humans never fill.
+    // Bots that do get a plausible-looking response and no account.
+    if (website) {
+      return res.status(201).json({ user: { username: String(username || '').trim(), role: 'analyst' } });
+    }
     const user = await authService.register({ username, password });
-    res.status(201).json({ user });
+    return res.status(201).json({ user });
   })
 );
 

@@ -1,4 +1,4 @@
-/* CIMI — dependency-free SVG chart primitives.
+/* CIMI dependency-free SVG chart primitives.
    Every chart is plain SVG built in the browser: no chart library, no CDN,
    works offline, and scales with the container. */
 (function (global) {
@@ -173,7 +173,7 @@
   }
 
   /**
-   * Relationship network — deterministic radial layout, clusters placed on
+   * Relationship network: deterministic radial layout, clusters placed on
    * concentric arcs so the picture is stable between renders.
    */
   function networkGraph(nodes, edges, options) {
@@ -222,7 +222,7 @@
       var r = 7 + (n.score || 0) / 14;
       parts.push('<g><circle cx="' + p.x.toFixed(1) + '" cy="' + p.y.toFixed(1) + '" r="' + r.toFixed(1) +
         '" fill="' + color + '" fill-opacity="0.85" stroke="' + PALETTE.nodeStroke + '" stroke-width="2"><title>' +
-        esc(n.id + ' — ' + n.verdict + ' (' + n.score + '/100)') + '</title></circle>' +
+        esc(n.id + ': ' + n.verdict + ' (' + n.score + '/100)') + '</title></circle>' +
         '<text x="' + p.x.toFixed(1) + '" y="' + (p.y + r + 11).toFixed(1) + '" text-anchor="middle" font-size="9" fill="' + PALETTE.axis + '">' +
         esc(n.id.length > 22 ? n.id.slice(0, 20) + '…' : n.id) + '</text></g>');
     });

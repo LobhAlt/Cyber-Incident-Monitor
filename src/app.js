@@ -4,6 +4,7 @@ const path = require('path');
 const express = require('express');
 const helmet = require('helmet');
 const cors = require('cors');
+const compression = require('compression');
 const rateLimit = require('express-rate-limit');
 
 const config = require('./config');
@@ -22,21 +23,31 @@ function createApp() {
   app.disable('x-powered-by');
   app.set('trust proxy', 1);
 
+  // --- Force HTTPS (behind a reverse proxy / load balancer) ---------------
+  if (config.forceHttps) {
+    app.use((req, res, next) => {
+      if (req.secure || req.path === '/api/health') return next();
+      return res.redirect(301, `https://${req.headers.host}${req.originalUrl}`);
+    });
+  }
+
   // --- Security headers ----------------------------------------------------
+  const analyticsOrigin = config.analytics.plausibleDomain
+    ? new URL(config.analytics.plausibleSrc).origin
+    : null;
   app.use(
     helmet({
       contentSecurityPolicy: {
         useDefaults: true,
         directives: {
           'default-src': ["'self'"],
-          // Tailwind is loaded from the CDN; inline styles are used for chart geometry.
           // Tailwind is vendored locally (public/vendor/tailwind.js) so the UI
           // works fully offline; its JIT engine injects styles at runtime.
-          'script-src': ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+          'script-src': ["'self'", "'unsafe-inline'", "'unsafe-eval'", ...(analyticsOrigin ? [analyticsOrigin] : [])],
           'style-src': ["'self'", "'unsafe-inline'"],
           'font-src': ["'self'", 'data:'],
           'img-src': ["'self'", 'data:'],
-          'connect-src': ["'self'"],
+          'connect-src': ["'self'", ...(analyticsOrigin ? [analyticsOrigin] : [])],
           'object-src': ["'none'"],
           'frame-ancestors': ["'self'"],
         },
@@ -46,6 +57,7 @@ function createApp() {
   );
 
   app.use(cors({ origin: true, credentials: false }));
+  app.use(compression());
   app.use(express.json({ limit: '4mb' }));
   app.use(express.urlencoded({ extended: false, limit: '1mb' }));
 
@@ -76,6 +88,34 @@ function createApp() {
     });
   });
 
+  /** Public, non-sensitive site settings the frontend needs before sign-in. */
+  app.get('/api/site', (req, res) => {
+    res.json({
+      registrationEnabled: config.allowRegistration,
+      analytics: config.analytics.plausibleDomain
+        ? { provider: 'plausible', domain: config.analytics.plausibleDomain, src: config.analytics.plausibleSrc }
+        : null,
+    });
+  });
+
+  // --- Crawler files -------------------------------------------------------
+  const baseUrl = (req) => config.publicUrl || `${req.protocol}://${req.get('host')}`;
+  const PUBLIC_PAGES = ['/', '/privacy.html', '/terms.html'];
+
+  app.get('/robots.txt', (req, res) => {
+    res.type('text/plain').send(
+      ['User-agent: *', 'Allow: /', 'Disallow: /api/', '', `Sitemap: ${baseUrl(req)}/sitemap.xml`, ''].join('\n')
+    );
+  });
+
+  app.get('/sitemap.xml', (req, res) => {
+    const base = baseUrl(req);
+    const urls = PUBLIC_PAGES.map((p) => `  <url><loc>${base}${p === '/' ? '/' : p}</loc></url>`).join('\n');
+    res.type('application/xml').send(
+      `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`
+    );
+  });
+
   // --- API routes ----------------------------------------------------------
   app.use('/api/auth', authRoutes);
   app.use('/api/ioc', iocRoutes);
@@ -88,8 +128,10 @@ function createApp() {
   app.use(express.static(config.publicDir, { index: 'index.html', maxAge: '1h' }));
 
   app.get('/api/*', notFound);
+  // The SPA routes by URL hash (#dashboard etc.), so any other path is a
+  // genuine 404: serve the branded page with the correct status code.
   app.get('*', (req, res) => {
-    res.sendFile(path.join(config.publicDir, 'index.html'));
+    res.status(404).sendFile(path.join(config.publicDir, '404.html'));
   });
 
   app.use(notFound);

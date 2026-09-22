@@ -3,9 +3,24 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CIMI — Cyber Incident Monitor in India</title>
-  <meta name="description" content="Real-time, STIX 2.1-compliant threat intelligence aggregation platform for Indian cyberspace." />
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%9B%A1%EF%B8%8F%3C/text%3E%3C/svg%3E" />
+  <title>CIMI: Cyber Incident Monitor in India</title>
+  <meta name="description" content="Screen IPs, domains, URLs, file hashes and CVEs against VirusTotal, AbuseIPDB, AlienVault OTX, CISA KEV and CERT-In, and get one STIX 2.1 verdict per indicator." />
+  <meta name="robots" content="index, follow" />
+  <meta name="theme-color" content="#0b0b0d" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="CIMI" />
+  <meta property="og:title" content="CIMI: Cyber Incident Monitor in India" />
+  <meta property="og:description" content="STIX 2.1 threat-intelligence aggregation for Indian cyberspace. One composite verdict per indicator, from five sources." />
+  <meta property="og:image" content="/og-image.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="CIMI shield logo on a dark background with the text Cyber Incident Monitor in India" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="CIMI: Cyber Incident Monitor in India" />
+  <meta name="twitter:description" content="STIX 2.1 threat-intelligence aggregation for Indian cyberspace." />
+  <meta name="twitter:image" content="/og-image.png" />
   <script>
     // Apply the saved theme before first paint to avoid a flash. Default: dark.
     (function () {
@@ -44,13 +59,13 @@
 <!-- ======================= LOGIN ======================= -->
 <div id="login-view" class="hidden min-h-screen items-center justify-center px-4 py-10">
   <button type="button" class="theme-toggle theme-toggle-floating" data-theme-toggle title="Switch theme" aria-label="Switch theme">
-      <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20.5 14.5A8.5 8.5 0 019.5 3.5a8.5 8.5 0 1011 11z" stroke-linejoin="round"/></svg>
-      <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" stroke-linecap="round"/></svg>
+      <svg aria-hidden="true" class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20.5 14.5A8.5 8.5 0 019.5 3.5a8.5 8.5 0 1011 11z" stroke-linejoin="round"/></svg>
+      <svg aria-hidden="true" class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" stroke-linecap="round"/></svg>
   </button>
   <div class="w-full max-w-md">
     <div class="text-center mb-8">
       <div class="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-600/15 ring-1 ring-brand-500/40 mb-4">
-        <svg viewBox="0 0 24 24" class="h-7 w-7 text-brand-400" fill="none" stroke="currentColor" stroke-width="1.8">
+        <svg viewBox="0 0 24 24" class="h-7 w-7 text-brand-400" fill="none" stroke="currentColor" stroke-width="1.8" role="img" aria-label="CIMI shield logo">
           <path d="M12 3l7 3v6c0 4.4-2.9 7.9-7 9-4.1-1.1-7-4.6-7-9V6l7-3z" stroke-linejoin="round"/>
           <path d="M9 12l2 2 4-4" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
@@ -69,13 +84,20 @@
       <form id="login-form" class="space-y-4" novalidate>
         <div>
           <label for="login-username" class="block text-xs font-medium text-slate-400 mb-1.5">Analyst username</label>
-          <input id="login-username" name="username" autocomplete="username" required
-                 class="field" placeholder="analyst" />
+          <input id="login-username" name="username" autocomplete="username" required minlength="3" maxlength="64"
+                 class="field" placeholder="analyst" aria-describedby="login-username-error" />
+          <p id="login-username-error" class="field-error hidden" role="alert"></p>
         </div>
         <div>
           <label for="login-password" class="block text-xs font-medium text-slate-400 mb-1.5">Password</label>
           <input id="login-password" name="password" type="password" autocomplete="current-password" required
-                 class="field" placeholder="••••••••" />
+                 class="field" placeholder="Your password" aria-describedby="login-password-error" />
+          <p id="login-password-error" class="field-error hidden" role="alert"></p>
+        </div>
+        <!-- Honeypot: invisible to people, tempting to bots. Server ignores signups that fill it. -->
+        <div class="hp-field" aria-hidden="true">
+          <label for="login-website">Website</label>
+          <input id="login-website" name="website" type="text" tabindex="-1" autocomplete="off" />
         </div>
         <div id="mfa-wrap" class="hidden">
           <label for="login-mfa" class="block text-xs font-medium text-slate-400 mb-1.5">Authenticator code</label>
@@ -84,12 +106,16 @@
         </div>
         <p id="login-error" class="hidden text-sm text-danger-400 bg-danger-500/10 ring-1 ring-danger-500/25 rounded-lg px-3 py-2"></p>
         <button id="login-submit" type="submit" class="btn-primary w-full">Sign in</button>
+        <p id="signup-terms" class="hidden text-[11px] text-slate-500 text-center">By creating an account you agree to the <a href="/terms.html" class="underline hover:text-brand-400">Terms</a> and <a href="/privacy.html" class="underline hover:text-brand-400">Privacy Policy</a>.</p>
       </form>
 
       <p id="login-hint" class="mt-4 text-xs text-slate-500 text-center leading-relaxed"></p>
     </div>
     <p class="mt-6 text-center text-[11px] text-slate-600">
-      G H Raisoni College of Engineering &amp; Management, Nagpur · CSE (Cyber Security) · Session 2026–27
+      G H Raisoni College of Engineering &amp; Management, Nagpur · CSE (Cyber Security) · Session 2026-27
+    </p>
+    <p class="mt-2 text-center text-[11px] text-slate-600">
+      <a href="/privacy.html" class="hover:text-brand-400 underline underline-offset-2">Privacy Policy</a> · <a href="/terms.html" class="hover:text-brand-400 underline underline-offset-2">Terms &amp; Conditions</a>
     </p>
   </div>
 </div>
@@ -102,7 +128,7 @@
     <aside id="sidebar" class="fixed lg:static inset-y-0 left-0 z-40 w-64 shrink-0 bg-ink-850 ring-1 ring-white/10 flex flex-col -translate-x-full lg:translate-x-0 transition-transform duration-200">
       <div class="flex items-center gap-3 px-5 h-16 border-b border-white/10">
         <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-600/15 ring-1 ring-brand-500/40">
-          <svg viewBox="0 0 24 24" class="h-5 w-5 text-brand-400" fill="none" stroke="currentColor" stroke-width="1.8">
+          <svg viewBox="0 0 24 24" class="h-5 w-5 text-brand-400" fill="none" stroke="currentColor" stroke-width="1.8" role="img" aria-label="CIMI shield logo">
             <path d="M12 3l7 3v6c0 4.4-2.9 7.9-7 9-4.1-1.1-7-4.6-7-9V6l7-3z" stroke-linejoin="round"/>
           </svg>
         </div>
@@ -114,27 +140,27 @@
 
       <nav class="flex-1 p-3 space-y-1 overflow-y-auto" aria-label="Main">
         <button class="nav-item" data-page="dashboard">
-          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+          <svg aria-hidden="true" class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
           Dashboard
         </button>
         <button class="nav-item" data-page="lookup">
-          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5" stroke-linecap="round"/></svg>
+          <svg aria-hidden="true" class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5" stroke-linecap="round"/></svg>
           IoC Lookup
         </button>
         <button class="nav-item" data-page="correlation">
-          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="8" r="2.5"/><circle cx="12" cy="18" r="2.5"/><path d="M8 7l8 1M7.5 8.2L11 15.6M16.8 10.2L13 15.8"/></svg>
+          <svg aria-hidden="true" class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="8" r="2.5"/><circle cx="12" cy="18" r="2.5"/><path d="M8 7l8 1M7.5 8.2L11 15.6M16.8 10.2L13 15.8"/></svg>
           Threat Correlation
         </button>
         <button class="nav-item" data-page="logs">
-          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M14 3H6.5A1.5 1.5 0 005 4.5v15A1.5 1.5 0 006.5 21h11a1.5 1.5 0 001.5-1.5V8l-5-5z" stroke-linejoin="round"/><path d="M14 3v5h5M8.5 13h7M8.5 17h4" stroke-linecap="round"/></svg>
+          <svg aria-hidden="true" class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M14 3H6.5A1.5 1.5 0 005 4.5v15A1.5 1.5 0 006.5 21h11a1.5 1.5 0 001.5-1.5V8l-5-5z" stroke-linejoin="round"/><path d="M14 3v5h5M8.5 13h7M8.5 17h4" stroke-linecap="round"/></svg>
           Log Analysis
         </button>
         <button class="nav-item" data-page="feeds">
-          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 11a9 9 0 019 9M4 4a16 16 0 0116 16" stroke-linecap="round"/><circle cx="5" cy="19" r="1.6" fill="currentColor" stroke="none"/></svg>
+          <svg aria-hidden="true" class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 11a9 9 0 019 9M4 4a16 16 0 0116 16" stroke-linecap="round"/><circle cx="5" cy="19" r="1.6" fill="currentColor" stroke="none"/></svg>
           Threat Feeds
         </button>
         <button class="nav-item" data-page="settings">
-          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.6 1.6 0 00-1.8-.3 1.6 1.6 0 00-1 1.5V21a2 2 0 11-4 0v-.1A1.6 1.6 0 008 19.4a1.6 1.6 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.6 1.6 0 00.3-1.8 1.6 1.6 0 00-1.5-1H2a2 2 0 110-4h.1A1.6 1.6 0 004.6 8a1.6 1.6 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.6 1.6 0 001.8.3H9a1.6 1.6 0 001-1.5V2a2 2 0 114 0v.1a1.6 1.6 0 001 1.5 1.6 1.6 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.6 1.6 0 00-.3 1.8V9a1.6 1.6 0 001.5 1H22a2 2 0 110 4h-.1a1.6 1.6 0 00-1.5 1z"/></svg>
+          <svg aria-hidden="true" class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.6 1.6 0 00-1.8-.3 1.6 1.6 0 00-1 1.5V21a2 2 0 11-4 0v-.1A1.6 1.6 0 008 19.4a1.6 1.6 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.6 1.6 0 00.3-1.8 1.6 1.6 0 00-1.5-1H2a2 2 0 110-4h.1A1.6 1.6 0 004.6 8a1.6 1.6 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.6 1.6 0 001.8.3H9a1.6 1.6 0 001-1.5V2a2 2 0 114 0v.1a1.6 1.6 0 001 1.5 1.6 1.6 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.6 1.6 0 00-.3 1.8V9a1.6 1.6 0 001.5 1H22a2 2 0 110 4h-.1a1.6 1.6 0 00-1.5 1z"/></svg>
           Settings
         </button>
       </nav>
@@ -148,7 +174,7 @@
             <p id="user-role" class="text-[10px] text-slate-500">analyst</p>
           </div>
           <button id="logout-btn" title="Sign out" class="p-1.5 rounded-md hover:bg-white/5 text-slate-400 hover:text-danger-400">
-            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M15 17l5-5-5-5M20 12H9M12 20H6a2 2 0 01-2-2V6a2 2 0 012-2h6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <svg aria-hidden="true" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M15 17l5-5-5-5M20 12H9M12 20H6a2 2 0 01-2-2V6a2 2 0 012-2h6" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
         </div>
       </div>
@@ -160,7 +186,7 @@
     <div class="flex-1 min-w-0 flex flex-col">
       <header class="sticky top-0 z-20 h-16 flex items-center gap-3 px-4 sm:px-6 bg-ink-900/85 backdrop-blur border-b border-white/10">
         <button id="sidebar-toggle" class="lg:hidden p-2 -ml-2 rounded-md hover:bg-white/5 text-slate-300">
-          <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h16M4 12h16M4 18h16" stroke-linecap="round"/></svg>
+          <svg aria-hidden="true" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h16M4 12h16M4 18h16" stroke-linecap="round"/></svg>
         </button>
         <div class="min-w-0">
           <h2 id="page-title" class="text-base font-semibold text-white truncate">Security Dashboard</h2>
@@ -169,11 +195,11 @@
         <div class="ml-auto flex items-center gap-2">
           <span id="demo-badge" class="hidden text-[10px] font-semibold uppercase tracking-wider px-2 py-1 rounded-md bg-warn-500/15 text-warn-400 ring-1 ring-warn-500/30">Simulated data</span>
           <button type="button" class="theme-toggle" data-theme-toggle title="Switch theme" aria-label="Switch theme">
-      <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20.5 14.5A8.5 8.5 0 019.5 3.5a8.5 8.5 0 1011 11z" stroke-linejoin="round"/></svg>
-      <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" stroke-linecap="round"/></svg>
+      <svg aria-hidden="true" class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20.5 14.5A8.5 8.5 0 019.5 3.5a8.5 8.5 0 1011 11z" stroke-linejoin="round"/></svg>
+      <svg aria-hidden="true" class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" stroke-linecap="round"/></svg>
           </button>
           <button id="refresh-btn" class="btn-ghost text-xs">
-            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 11a8 8 0 10-2.3 5.7M20 5v6h-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <svg aria-hidden="true" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 11a8 8 0 10-2.3 5.7M20 5v6h-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
             Refresh
           </button>
         </div>
@@ -181,10 +207,19 @@
 
       <main id="page-root" class="flex-1 p-4 sm:p-6 max-w-[1500px] w-full"></main>
 
-      <footer class="px-6 py-4 text-[11px] text-slate-600 border-t border-white/5">
-        CIMI · Major Project 2026–27 · Lobh Dhomne, Riya Adhe, Vaishnavi Rokade · Guide: Saurabh Vyas
+      <footer class="px-6 py-4 text-[11px] text-slate-600 border-t border-white/5 flex flex-wrap gap-x-4 gap-y-1">
+        <span>CIMI · Major Project 2026-27 · Lobh Dhomne, Riya Adhe, Vaishnavi Rokade · Guide: Saurabh Vyas</span>
+        <span class="ml-auto"><a href="/privacy.html" class="hover:text-brand-400 underline underline-offset-2">Privacy</a> · <a href="/terms.html" class="hover:text-brand-400 underline underline-offset-2">Terms</a></span>
       </footer>
     </div>
+  </div>
+</div>
+
+<div id="consent" class="consent hidden" role="dialog" aria-live="polite" aria-label="Storage and analytics notice">
+  <p>CIMI keeps your sign-in session and theme choice in this browser's local storage and sets no cookies. <span id="consent-analytics-text" class="hidden">The operator also uses cookie-less, anonymous page-view analytics, which run only if you allow them.</span> See the <a href="/privacy.html">Privacy Policy</a>.</p>
+  <div class="consent-actions">
+    <button id="consent-accept" type="button" class="btn-primary">OK</button>
+    <button id="consent-essential" type="button" class="btn-ghost hidden">Essential only</button>
   </div>
 </div>
 

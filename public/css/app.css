@@ -26,8 +26,8 @@
   --slate-200: 228 228 231;
   --slate-300: 203 203 210;
   --slate-400: 150 150 160;
-  --slate-500: 108 108 120;
-  --slate-600: 76 76 86;
+  --slate-500: 138 138 150;
+  --slate-600: 122 122 134;
   --white: 255 255 255;     /* also used at low alpha for borders/rings */
   /* verdicts */
   --danger-400: 248 113 113;   /* red — reserved for threats */
@@ -43,7 +43,7 @@
   --chart-clean: #34d399;
   --chart-unknown: #8b8b96;
   --chart-grid: rgba(255,255,255,0.08);
-  --chart-axis: #6c6c78;
+  --chart-axis: #8a8a96;
   --chart-label: #e4e4e7;
   --chart-node-stroke: #0b0b0d;
   --shadow: 0 10px 30px rgba(0,0,0,.55);
@@ -66,21 +66,21 @@
   --slate-300: 39 39 42;
   --slate-400: 82 82 91;
   --slate-500: 113 113 122;
-  --slate-600: 161 161 170;
+  --slate-600: 112 112 122;
   --white: 17 17 17;
   --danger-400: 220 38 38;
   --danger-500: 220 38 38;
-  --warn-400: 217 119 6;
+  --warn-400: 180 83 9;
   --warn-500: 217 119 6;
-  --safe-400: 5 150 105;
+  --safe-400: 4 120 87;
   --safe-500: 5 150 105;
   --chart-accent: #2563eb;
   --chart-malicious: #dc2626;
-  --chart-suspicious: #d97706;
-  --chart-clean: #059669;
+  --chart-suspicious: #b45309;
+  --chart-clean: #047857;
   --chart-unknown: #a1a1aa;
   --chart-grid: rgba(0,0,0,0.08);
-  --chart-axis: #71717a;
+  --chart-axis: #6b6b76;
   --chart-label: #18181b;
   --chart-node-stroke: #fafafa;
   --shadow: 0 10px 30px rgba(0,0,0,.12);
@@ -214,3 +214,40 @@ select.field { appearance: none; background-image: linear-gradient(45deg, transp
 
 .flex-center { display: flex; align-items: center; justify-content: center; }
 #login-view.is-visible { display: flex; }
+
+/* --- honeypot (spam protection) ---------------------------------------- */
+.hp-field { position: absolute; left: -9999px; top: auto; width: 1px; height: 1px; overflow: hidden; opacity: 0; }
+
+/* --- inline form validation --------------------------------------------- */
+.field[aria-invalid="true"] { border-color: rgb(var(--danger-500)); box-shadow: 0 0 0 3px rgb(var(--danger-500) / .15); }
+.field-error { font-size: .72rem; color: rgb(var(--danger-400)); margin-top: .35rem; }
+
+/* --- storage / analytics notice ----------------------------------------- */
+.consent {
+  position: fixed; left: 1rem; right: 1rem; bottom: 1rem; z-index: 60;
+  margin: 0 auto; max-width: 40rem;
+  background: rgb(var(--ink-850)); border: 1px solid rgb(var(--white) / .12);
+  border-radius: .9rem; padding: 1rem 1.1rem; box-shadow: var(--shadow);
+  font-size: .8rem; color: rgb(var(--slate-300)); line-height: 1.5;
+}
+.consent p { margin: 0 0 .75rem; }
+.consent a { color: rgb(var(--brand-400)); text-decoration: underline; text-underline-offset: 2px; }
+.consent-actions { display: flex; flex-wrap: wrap; gap: .5rem; }
+.consent-actions .btn-primary, .consent-actions .btn-ghost { padding: .45rem .85rem; font-size: .78rem; }
+
+/* --- static document pages (privacy, terms, 404) ------------------------- */
+.doc { max-width: 44rem; margin: 0 auto; padding: 3rem 1rem 4rem; font-size: .95rem; line-height: 1.65; color: rgb(var(--slate-300)); }
+.doc h1 { font-size: 1.75rem; font-weight: 600; color: rgb(var(--white)); margin: 0 0 .25rem; letter-spacing: -.01em; }
+.doc h2 { font-size: 1.05rem; font-weight: 600; color: rgb(var(--slate-200)); margin: 2rem 0 .5rem; }
+.doc p { margin: 0 0 1rem; }
+.doc ul { padding-left: 1.25rem; margin: 0 0 1rem; }
+.doc li { margin-bottom: .4rem; }
+.doc a { color: rgb(var(--brand-400)); text-decoration: underline; text-underline-offset: 2px; }
+.doc code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .85em; background: rgb(var(--white) / .07); padding: .1em .35em; border-radius: .3rem; }
+.doc-meta { font-size: .78rem; color: rgb(var(--slate-500)); margin-bottom: 2rem !important; }
+.doc-back { display: inline-block; font-size: .8rem; color: rgb(var(--slate-400)) !important; text-decoration: none !important; margin-bottom: 1.5rem; }
+.doc-back:hover { color: rgb(var(--brand-400)) !important; }
+.doc-footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid rgb(var(--white) / .08); font-size: .78rem; color: rgb(var(--slate-500)); }
+.doc-center { text-align: center; padding-top: 6rem; }
+.doc-code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 3.5rem; font-weight: 600; color: rgb(var(--brand-400)); margin: 0; line-height: 1; }
+.doc .btn-primary { text-decoration: none; color: var(--btn-primary-text); }

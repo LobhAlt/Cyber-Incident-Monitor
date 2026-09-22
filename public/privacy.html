@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <title>Privacy Policy | CIMI</title>
+  <meta name="description" content="What CIMI stores, which third-party threat-intelligence services receive the indicators you submit, and how to have your data removed." />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="index, follow" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <meta name="theme-color" content="#0b0b0d" />
+  <script>(function(){var t=null;try{t=localStorage.getItem("cimi-theme")}catch(e){}document.documentElement.setAttribute("data-theme",t==="light"?"light":"dark")})();</script>
+  <link rel="stylesheet" href="/css/app.css" />
+</head>
+<body>
+<main class="doc">
+  <a class="doc-back" href="/">&larr; Back to CIMI</a>
+  <h1>Privacy Policy</h1>
+  <p class="doc-meta">Last updated 22 September 2026</p>
+
+  <p>CIMI (Cyber Incident Monitor in India) is an analyst tool for screening indicators of compromise against threat-intelligence sources. This page explains exactly what the platform stores and where data goes. It is written to be read, not skimmed, so it is short.</p>
+
+  <h2>1. What we store</h2>
+  <ul>
+    <li><strong>Account details:</strong> your username, a scrypt hash of your password (never the password itself), and, if you enable multi-factor authentication, your TOTP secret. Stored in <code>users.json</code> on the server.</li>
+    <li><strong>Lookup history:</strong> every indicator you screen (IP address, domain, URL, file hash or CVE ID), the verdict, score, source country and matched techniques, together with your username and a timestamp. Kept to the newest 5,000 entries.</li>
+    <li><strong>Log analysis reports:</strong> when you upload or paste a log, the file name, detected format, extracted indicators and their screening results are stored. The raw log text itself is processed in memory and is not written to disk. Kept to the newest 200 reports.</li>
+    <li><strong>In your browser:</strong> a session token, your theme preference and whether you dismissed the storage notice, all in <code>localStorage</code>. CIMI sets no cookies.</li>
+  </ul>
+
+  <h2>2. Where your indicators go</h2>
+  <p>Screening an indicator sends that indicator to the configured third-party services so they can return their reputation data. Depending on the instance's configuration these are:</p>
+  <ul>
+    <li><a href="https://docs.virustotal.com/docs/privacy-policy" rel="noopener">VirusTotal</a> (Google)</li>
+    <li><a href="https://www.abuseipdb.com/privacy" rel="noopener">AbuseIPDB</a></li>
+    <li><a href="https://otx.alienvault.com/" rel="noopener">AlienVault OTX</a> (LevelBlue)</li>
+  </ul>
+  <p>Only the indicator value is sent, never your username, session or other lookups. CISA KEV and CERT-In feeds are downloaded to the server; nothing about you is sent to them. If the instance has no API keys, no external service is contacted and results are produced by the built-in offline simulator, clearly labelled as simulated.</p>
+  <p>Do not submit indicators that are themselves confidential (for example an internal hostname) unless you are comfortable with them being queried against the services above.</p>
+
+  <h2>3. Analytics</h2>
+  <p>This instance may use <a href="https://plausible.io/data-policy" rel="noopener">Plausible</a>, a cookie-less analytics service that records page views without identifying individual visitors. It is loaded only if the operator has configured it and only after you accept it in the notice shown on first visit. Choosing "Essential only" keeps it off.</p>
+
+  <h2>4. Security</h2>
+  <p>Sessions use signed JSON Web Tokens that expire after 8 hours by default. Passwords are hashed with scrypt using a per-user salt. Provider API keys are held only on the server and never sent to the browser. Connections should be made over HTTPS; the reference deployment enforces this.</p>
+
+  <h2>5. Your rights and how to remove data</h2>
+  <ul>
+    <li>You can clear your lookup history at any time from the IoC Lookup page.</li>
+    <li>To have your account and all associated records deleted, contact the operator of this instance. Because the platform stores data in flat files on a single server, removal is immediate and complete.</li>
+  </ul>
+
+  <h2>6. Who operates this instance</h2>
+  <p>CIMI is an academic project developed by Lobh Dhomne, Riya Adhe and Vaishnavi Rokade at G H Raisoni College of Engineering &amp; Management, Nagpur, under the guidance of Saurabh Vyas. The person or organisation who deployed this copy is the data controller for anything stored on it.</p>
+
+  <h2>7. Changes</h2>
+  <p>If this policy changes, the date at the top is updated. Material changes to what is stored or shared will be announced on the sign-in page.</p>
+
+  <footer class="doc-footer">
+    <a href="/">Home</a> &middot; <a href="/terms.html">Terms &amp; Conditions</a>
+  </footer>
+</main>
+</body>
+</html>

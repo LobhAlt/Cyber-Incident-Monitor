@@ -23,6 +23,7 @@
   "author": "Lobh Dhomne, Riya Adhe, Vaishnavi Rokade",
   "license": "MIT",
   "dependencies": {
+    "compression": "^1.8.2",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",

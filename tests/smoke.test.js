@@ -392,10 +392,61 @@ async function test(name, fn) {
     assert.ok(data.error);
   });
 
-  await test('deep SPA routes fall through to index.html', async () => {
+  await test('unknown paths get the custom 404 page with a 404 status', async () => {
     const res = await fetch(BASE + '/some/deep/route');
-    assert.strictEqual(res.status, 200);
-    assert.ok((await res.text()).includes('<title>CIMI'));
+    assert.strictEqual(res.status, 404);
+    assert.ok((await res.text()).includes('Page not found'));
+  });
+
+  await test('privacy and terms pages are served', async () => {
+    for (const page of ['/privacy.html', '/terms.html']) {
+      const res = await fetch(BASE + page);
+      assert.strictEqual(res.status, 200, page);
+      const html = await res.text();
+      assert.ok(html.includes('<meta name="description"'), `${page} has a meta description`);
+      assert.ok(!html.includes('\u2014'), `${page} contains no em dashes`);
+    }
+  });
+
+  await test('robots.txt and sitemap.xml are generated', async () => {
+    const robots = await (await fetch(BASE + '/robots.txt')).text();
+    assert.ok(robots.includes('Disallow: /api/'));
+    assert.ok(robots.includes(`Sitemap: ${BASE}/sitemap.xml`));
+    const sitemap = await (await fetch(BASE + '/sitemap.xml')).text();
+    assert.ok(sitemap.includes(`<loc>${BASE}/privacy.html</loc>`));
+  });
+
+  await test('favicon, touch icon and social preview image exist', async () => {
+    for (const asset of ['/favicon.svg', '/apple-touch-icon.png', '/og-image.png']) {
+      const res = await fetch(BASE + asset);
+      assert.strictEqual(res.status, 200, asset);
+    }
+  });
+
+  await test('public site config exposes no secrets', async () => {
+    const { status, data } = await api('/api/site');
+    assert.strictEqual(status, 200);
+    assert.strictEqual(typeof data.registrationEnabled, 'boolean');
+    assert.ok(!JSON.stringify(data).toLowerCase().includes('key'));
+  });
+
+  await test('registration honeypot swallows bot signups', async () => {
+    const saved = token; token = null;
+    const { status } = await api('/api/auth/register', {
+      method: 'POST', body: { username: 'bot-' + Date.now(), password: 'BotPassword123', website: 'http://spam.example' },
+    });
+    assert.strictEqual(status, 201);
+    const login = await api('/api/auth/login', { method: 'POST', body: { username: 'bot-x', password: 'BotPassword123' } });
+    assert.strictEqual(login.status, 401, 'no account was actually created');
+    token = saved;
+  });
+
+  await test('frontend bundle contains no provider API keys', async () => {
+    const files = ['/js/app.js', '/js/api.js', '/js/charts.js', '/'];
+    for (const f of files) {
+      const text = await (await fetch(BASE + f)).text();
+      assert.ok(!/API_KEY|apiKey\s*[:=]\s*['"][A-Za-z0-9]{20,}/.test(text), f);
+    }
   });
 
   // --- summary -------------------------------------------------------------

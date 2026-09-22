@@ -81,6 +81,17 @@ const config = {
   },
 
   forceDemoMode: bool(process.env.FORCE_DEMO_MODE, false),
+
+  // Public-facing site settings
+  publicUrl: (process.env.PUBLIC_URL || '').trim().replace(/\/+$/, ''),
+  forceHttps: bool(process.env.FORCE_HTTPS, false),
+  allowRegistration: bool(process.env.ALLOW_REGISTRATION, true),
+  analytics: {
+    // Privacy-friendly, cookie-less analytics (Plausible). Loaded only after the
+    // visitor accepts in the consent banner; nothing is loaded when unset.
+    plausibleDomain: (process.env.PLAUSIBLE_DOMAIN || '').trim(),
+    plausibleSrc: (process.env.PLAUSIBLE_SRC || 'https://plausible.io/js/script.js').trim(),
+  },
   scheduler: {
     enabled: bool(process.env.ENABLE_SCHEDULER, true),
     intervalMs: int(process.env.SCHEDULER_INTERVAL_MS, 60 * 60 * 1000),

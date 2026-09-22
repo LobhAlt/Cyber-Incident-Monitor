@@ -17,6 +17,7 @@ services:
       NODE_ENV: production
       PORT: 3000
       DATA_DIR: /app/data
+      # Set FORCE_HTTPS=true and PUBLIC_URL=https://<DOMAIN> in .env when using the tls profile
     volumes:
       - cimi-data:/app/data
     ports:
