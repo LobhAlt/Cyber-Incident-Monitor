@@ -3,6 +3,7 @@
   'use strict';
 
   var Api = window.CimiApi;
+  var Pw = window.CimiPassword;
   var C = window.CimiCharts;
   var esc = C.esc;
 
@@ -23,31 +24,10 @@
     correlation: { title: 'Threat Correlation',  sub: 'Group indicators by shared pulses, tags and techniques to surface campaigns' },
     logs:        { title: 'Log Analysis',        sub: 'Extract indicators from raw logs and auto-screen them against live intelligence' },
     feeds:       { title: 'Threat Intelligence Feeds', sub: 'CERT-In advisories, CISA KEV catalog, OTX pulses and feed health' },
+    watchlist:   { title: 'Watchlist',           sub: 'Indicators re-screened every hour, with an email when a verdict gets worse' },
+    admin:       { title: 'Admin',               sub: 'Accounts, sign-up policy and the activity log' },
     settings:    { title: 'Settings',            sub: 'Account, multi-factor authentication and platform status' },
   };
-
-  // ======================= theme =======================
-
-  var THEME_KEY = 'cimi-theme';
-
-  function currentTheme() {
-    return document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
-  }
-
-  function applyTheme(theme) {
-    document.documentElement.setAttribute('data-theme', theme);
-    try { localStorage.setItem(THEME_KEY, theme); } catch (e) { /* private mode */ }
-    $$('[data-theme-toggle]').forEach(function (btn) {
-      btn.title = theme === 'light' ? 'Switch to dark theme' : 'Switch to light theme';
-      btn.setAttribute('aria-label', btn.title);
-    });
-  }
-
-  function toggleTheme() {
-    applyTheme(currentTheme() === 'light' ? 'dark' : 'light');
-    // SVG charts bake their colours in at render time, so redraw the open page.
-    if (state.user && !$('#app-view').classList.contains('hidden')) renderPage();
-  }
 
   // ======================= helpers =======================
 
@@ -118,6 +98,31 @@
       '</div>';
   }
 
+  /** A "Download PDF report" button row placed above a result. */
+  function reportToolbar(title, subtitle) {
+    return '<div class="flex justify-end mb-3 no-print">' +
+      '<button class="btn-ghost text-[11px]" data-print-report="' + esc(title) + '" data-print-sub="' + esc(subtitle || '') + '">Download PDF report</button>' +
+      '</div>';
+  }
+
+  /**
+   * Uses the browser's print dialog ("Save as PDF") with a print stylesheet
+   * that turns the current result into a white, paper-friendly report.
+   */
+  function printReport(title, subtitle) {
+    var u = state.user || {};
+    $('#print-header').innerHTML =
+      '<p style="font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#e5192d;margin:0 0 4px">CIMI · Cyber Incident Monitor in India</p>' +
+      '<h1 style="font-size:20px;font-weight:700;margin:0">' + esc(title) + '</h1>' +
+      (subtitle ? '<p class="mono" style="margin:4px 0 0;font-size:12px">' + esc(subtitle) + '</p>' : '') +
+      '<p style="font-size:11px;color:#555;margin:6px 0 16px;padding-bottom:10px;border-bottom:2px solid #e5192d">Generated ' +
+        esc(new Date().toLocaleString()) + ' by ' + esc(u.username || 'analyst') + '. Verdicts blend VirusTotal, AbuseIPDB, AlienVault OTX and CISA KEV.</p>';
+    var previous = document.title;
+    document.title = title.replace(/\s+/g, '-').toLowerCase() + '-' + new Date().toISOString().slice(0, 10);
+    window.print();
+    document.title = previous;
+  }
+
   function loading(message) {
     return '<div class="flex-center gap-3 py-16 text-sm text-slate-500"><span class="spinner"></span>' +
       esc(message || 'Loading…') + '</div>';
@@ -161,6 +166,7 @@
     $('#user-name').textContent = user.username || 'analyst';
     $('#user-role').textContent = user.role || 'analyst';
     $('#user-initial').textContent = (user.username || 'A').charAt(0).toUpperCase();
+    $('#nav-admin').classList.toggle('hidden', user.role !== 'admin');
 
     Api.health().then(function (h) {
       state.health = h;
@@ -200,15 +206,22 @@
   }
 
   /** Client-side checks mirror the server's rules so people get instant feedback. */
-  function validateAuthForm(username, password, mfaToken) {
+  function validateAuthForm(username, email, password, mfaToken) {
     var ok = true;
-    if (!username) { setFieldError('login-username', 'Enter your username.'); ok = false; }
-    else if (authMode === 'signup' && username.length < 3) { setFieldError('login-username', 'Username must be at least 3 characters.'); ok = false; }
-    else if (!/^[A-Za-z0-9._@-]+$/.test(username)) { setFieldError('login-username', 'Use letters, numbers, dots, hyphens, underscores or @ only.'); ok = false; }
+    var signup = authMode === 'signup';
+    if (!username) { setFieldError('login-username', signup ? 'Choose a username.' : 'Enter your username or email.'); ok = false; }
+    else if (signup && username.length < 3) { setFieldError('login-username', 'Username must be at least 3 characters.'); ok = false; }
+    else if (signup && !/^[A-Za-z0-9._-]+$/.test(username)) { setFieldError('login-username', 'Use letters, numbers, dots, hyphens or underscores only.'); ok = false; }
     else setFieldError('login-username', null);
 
+    if (signup) {
+      if (!email) { setFieldError('login-email', 'Enter your email address.'); ok = false; }
+      else if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) { setFieldError('login-email', 'That does not look like an email address.'); ok = false; }
+      else setFieldError('login-email', null);
+    }
+
     if (!password) { setFieldError('login-password', 'Enter your password.'); ok = false; }
-    else if (authMode === 'signup' && password.length < 8) { setFieldError('login-password', 'Password must be at least 8 characters.'); ok = false; }
+    else if (signup && Pw.problem(password, { username: username, email: email })) { setFieldError('login-password', Pw.problem(password, { username: username, email: email }) + '.'); ok = false; }
     else setFieldError('login-password', null);
 
     if (!$('#mfa-wrap').classList.contains('hidden') && !/^\d{6}$/.test(mfaToken)) {
@@ -217,58 +230,169 @@
     return ok;
   }
 
-  function handleLoginSubmit(event) {
+  function showAuthError(message, offerResend) {
+    $('#login-error').textContent = message;
+    $('#login-resend').classList.toggle('hidden', !offerResend);
+    $('#login-error-wrap').classList.remove('hidden');
+  }
+
+  function hideAuthError() {
+    $('#login-error-wrap').classList.add('hidden');
+    $('#login-resend').classList.add('hidden');
+  }
+
+  // Remembered only in memory, so "Resend link" knows which account to use.
+  var pendingVerification = null;
+
+  /** Shows one panel of the sign-in card: the main form, the email notice, forgot password or forced change. */
+  function showAuthPanel(name) {
+    var panels = { form: '#login-form', verify: '#verify-notice', forgot: '#forgot-form', force: '#force-change-form' };
+    Object.keys(panels).forEach(function (key) { $(panels[key]).classList.toggle('hidden', key !== name); });
+    $('#tab-signin').parentNode.classList.toggle('hidden', name !== 'form');
+  }
+
+  function showVerifyNotice(email, delivery) {
+    pendingVerification = email;
+    $('#verify-email').textContent = email;
+    $('#verify-console').classList.toggle('hidden', delivery !== 'console');
+    showAuthPanel('verify');
+  }
+
+  function hideVerifyNotice() {
+    showAuthPanel('form');
+  }
+
+  function showForgot() {
+    $('#forgot-login').value = $('#login-username').value.trim();
+    $('#forgot-status').classList.add('hidden');
+    showAuthPanel('forgot');
+    $('#forgot-login').focus();
+  }
+
+  function handleForgotSubmit(event) {
     event.preventDefault();
-    var button = $('#login-submit');
-    var errorEl = $('#login-error');
-    errorEl.classList.add('hidden');
-
-    var username = $('#login-username').value.trim();
-    var password = $('#login-password').value;
-    var mfaToken = $('#login-mfa').value.trim();
-    var website = $('#login-website').value; // honeypot, normally empty
-
-    if (!validateAuthForm(username, password, mfaToken)) return;
-
+    var login = $('#forgot-login').value.trim();
+    if (!login) return $('#forgot-login').focus();
+    var button = $('#forgot-submit');
     button.disabled = true;
-    button.innerHTML = '<span class="spinner"></span>' + (authMode === 'signin' ? 'Signing in…' : 'Creating account…');
+    Api.forgotPassword(login).then(function (res) {
+      var status = $('#forgot-status');
+      status.textContent = res.message + (state.site.emailConsole ? ' This server prints emails in its terminal.' : '');
+      status.classList.remove('hidden');
+    }).catch(function (err) { toast(err.message, 'error'); })
+      .finally(function () { button.disabled = false; });
+  }
 
-    var flow = authMode === 'signup'
-      ? Api.registerUser({ username: username, password: password, website: website })
-          .then(function () { return Api.login({ username: username, password: password }); })
-      : Api.login({ username: username, password: password, mfaToken: mfaToken || undefined });
+  /** Shown after signing in with the published default password; nothing else works until it is changed. */
+  function showForceChange() {
+    showLogin();
+    showAuthPanel('force');
+    $('#force-error').classList.add('hidden');
+    $('#force-current').focus();
+  }
 
-    flow.then(function (result) {
-      if (result.mfaRequired) {
-        $('#mfa-wrap').classList.remove('hidden');
-        $('#login-mfa').focus();
-        errorEl.textContent = 'Enter the 6-digit code from your authenticator app.';
-        errorEl.classList.remove('hidden');
-        return;
-      }
-      Api.setSession(result.token, result.user);
-      state.user = result.user;
-      toast('Signed in as ' + result.user.username, 'success');
+  function handleForceChange(event) {
+    event.preventDefault();
+    var u = state.user || {};
+    var current = $('#force-current').value;
+    var next = $('#force-new').value;
+    var errorEl = $('#force-error');
+    var issue = Pw.problem(next, { username: u.username, email: u.email });
+    var message = !current ? 'Enter the current password.'
+      : issue ? issue + '.'
+        : next !== $('#force-confirm').value ? 'The new passwords do not match.' : null;
+    if (message) { errorEl.textContent = message; errorEl.classList.remove('hidden'); return; }
+    errorEl.classList.add('hidden');
+    Api.changePassword(current, next).then(function (res) {
+      state.user = res.user;
+      $('#force-change-form').reset();
+      showAuthPanel('form');
+      toast('Password saved', 'success');
       showApp();
     }).catch(function (err) {
       errorEl.textContent = err.message;
       errorEl.classList.remove('hidden');
-    }).finally(function () {
+    });
+  }
+
+  function resendVerification(login) {
+    if (!login) return;
+    Api.resendVerification(login)
+      .then(function (res) { toast(res.message || 'If the account is waiting for confirmation, a new link is on its way.', 'success'); })
+      .catch(function (err) { toast(err.message, 'error'); });
+  }
+
+  function handleLoginSubmit(event) {
+    event.preventDefault();
+    var button = $('#login-submit');
+    hideAuthError();
+
+    var username = $('#login-username').value.trim();
+    var email = $('#login-email').value.trim();
+    var password = $('#login-password').value;
+    var mfaToken = $('#login-mfa').value.trim();
+    var website = $('#login-website').value; // honeypot, normally empty
+
+    if (!validateAuthForm(username, email, password, mfaToken)) return;
+
+    button.disabled = true;
+    button.innerHTML = '<span class="spinner"></span>' + (authMode === 'signin' ? 'Signing in…' : 'Creating account…');
+
+    if (authMode === 'signup') {
+      Api.registerUser({ username: username, email: email, password: password, website: website })
+        .then(function (res) {
+          $('#login-form').reset();
+          showVerifyNotice(res.email || email, res.delivery);
+        })
+        .catch(function (err) { showAuthError(err.message, false); })
+        .finally(resetButton);
+      return;
+    }
+
+    Api.login({ username: username, password: password, mfaToken: mfaToken || undefined })
+      .then(function (result) {
+        if (result.mfaRequired) {
+          $('#mfa-wrap').classList.remove('hidden');
+          $('#login-mfa').focus();
+          showAuthError('Enter the 6-digit code from your authenticator app.', false);
+          return;
+        }
+        // The session token is in an HttpOnly cookie; only the public profile is kept, in memory.
+        $('#login-password').value = '';
+        state.user = result.user;
+        if (result.user.mustChangePassword) return showForceChange();
+        toast('Signed in as ' + result.user.username, 'success');
+        showApp();
+      })
+      .catch(function (err) {
+        showAuthError(err.message, err.code === 'EMAIL_UNVERIFIED');
+        if (err.code === 'ACCOUNT_LOCKED' || err.code === 'BAD_CREDENTIALS') $('#forgot-link').classList.add('text-white');
+      })
+      .finally(resetButton);
+
+    function resetButton() {
       button.disabled = false;
       button.textContent = authMode === 'signin' ? 'Sign in' : 'Create account';
-    });
+    }
   }
 
   function setAuthMode(mode) {
     authMode = mode;
-    $('#tab-signin').setAttribute('aria-selected', String(mode === 'signin'));
-    $('#tab-signup').setAttribute('aria-selected', String(mode === 'signup'));
-    $('#login-submit').textContent = mode === 'signin' ? 'Sign in' : 'Create account';
+    var signup = mode === 'signup';
+    $('#tab-signin').setAttribute('aria-selected', String(!signup));
+    $('#tab-signup').setAttribute('aria-selected', String(signup));
+    $('#login-submit').textContent = signup ? 'Create account' : 'Sign in';
+    $('#login-username-label').textContent = signup ? 'Username' : 'Username or email';
+    $('#login-username').setAttribute('placeholder', signup ? 'e.g. riya.adhe' : 'analyst');
+    $('#email-wrap').classList.toggle('hidden', !signup);
     $('#mfa-wrap').classList.add('hidden');
-    $('#login-error').classList.add('hidden');
-    $('#login-password').setAttribute('autocomplete', mode === 'signin' ? 'current-password' : 'new-password');
-    $('#signup-terms').classList.toggle('hidden', mode !== 'signup');
+    hideAuthError();
+    $('#login-password').setAttribute('autocomplete', signup ? 'new-password' : 'current-password');
+    $('#signup-terms').classList.toggle('hidden', !signup);
+    $('#signup-meter-slot').classList.toggle('hidden', !signup);
+    $('#forgot-link').classList.toggle('hidden', signup);
     setFieldError('login-username', null);
+    setFieldError('login-email', null);
     setFieldError('login-password', null);
   }
 
@@ -346,6 +470,10 @@
       case 'logs': return renderLogs(root);
       case 'feeds': return renderFeeds(root);
       case 'settings': return renderSettings(root);
+      case 'watchlist': return renderWatchlist(root);
+      case 'admin':
+        if (!state.user || state.user.role !== 'admin') return navigate('dashboard');
+        return renderAdmin(root);
       default: return renderDashboard(root);
     }
   }
@@ -621,6 +749,8 @@
       '<div class="flex gap-2 mt-3">' +
         '<button id="dl-stix-one" class="btn-ghost text-[11px]">Download STIX 2.1 bundle</button>' +
         '<button id="add-corr" class="btn-ghost text-[11px]">Add to correlation set</button>' +
+        '<button id="watch-one" class="btn-ghost text-[11px]">Add to watchlist</button>' +
+        '<button class="btn-ghost text-[11px]" data-print-report="IoC lookup report" data-print-sub="' + esc(r.indicator) + '">Download PDF report</button>' +
       '</div>' +
       '</section>';
 
@@ -700,6 +830,10 @@
       '<div class="grid grid-cols-1 lg:grid-cols-2 gap-3 mt-3">' + attack + timeline + '</div>' +
       '<div class="mt-3">' + stixPreview + '</div>';
 
+    $('#watch-one').addEventListener('click', function () {
+      Api.watchAdd(r.indicator).then(function () { toast(r.indicator + ' added to your watchlist', 'success'); })
+        .catch(function (err) { toast(err.message, 'error'); });
+    });
     $('#dl-stix-one').addEventListener('click', function () {
       Api.downloadStix([r.indicator])
         .then(function () { toast('STIX bundle downloaded', 'success'); })
@@ -861,7 +995,8 @@
           }).join('') + '</tbody></table></div>'
         : C.emptyState('No indicator pairs shared enough signals to be linked.'));
 
-    target.innerHTML = kpis + '<div class="mt-3">' + graph + '</div>' +
+    target.innerHTML = reportToolbar('Threat correlation report', s.indicators + ' indicators') +
+      kpis + '<div class="mt-3">' + graph + '</div>' +
       '<div class="grid grid-cols-1 lg:grid-cols-2 gap-3 mt-3">' + clusters + edges + '</div>';
   }
 
@@ -971,7 +1106,8 @@
           list.slice(0, 40).map(function (v) { return '<span class="tag mono">' + esc(v) + '</span>'; }).join('') + '</div></div>';
       }).join('') || C.emptyState('Nothing extracted.'));
 
-    target.innerHTML = head + '<div class="mt-3">' + findings + '</div><div class="mt-3">' + extracted + '</div>';
+    target.innerHTML = reportToolbar('Log analysis report', report.fileName) +
+      head + '<div class="mt-3">' + findings + '</div><div class="mt-3">' + extracted + '</div>';
     bindLookupLinks(target);
   }
 
@@ -1108,6 +1244,7 @@
       card('Account', '',
         '<dl class="space-y-2 text-xs">' +
           '<div class="flex justify-between"><dt class="text-slate-500">Username</dt><dd class="text-slate-200">' + esc(u.username || '-') + '</dd></div>' +
+          '<div class="flex justify-between gap-3"><dt class="text-slate-500">Email</dt><dd class="text-slate-200 truncate">' + esc(u.email || '-') + '</dd></div>' +
           '<div class="flex justify-between"><dt class="text-slate-500">Role</dt><dd class="text-slate-200">' + esc(u.role || '-') + '</dd></div>' +
           '<div class="flex justify-between"><dt class="text-slate-500">Account created</dt><dd class="text-slate-200">' + esc(fmtDate(u.createdAt)) + '</dd></div>' +
           '<div class="flex justify-between"><dt class="text-slate-500">MFA</dt><dd class="' + (u.mfaEnabled ? 'text-safe-400' : 'text-warn-400') + '">' +
@@ -1137,7 +1274,17 @@
         '<p class="text-[11px] text-slate-600 mt-3">Add provider API keys to <code>.env</code> and restart the server to switch a source from simulator to live.</p>') +
       card('Data', 'Flat-file JSON store. No database server required',
         '<p class="text-xs text-slate-400 mb-3">Users, lookup history, log reports and advisories are stored as JSON files under <code>data/</code>.</p>' +
-        '<button id="wipe-history" class="btn-ghost text-xs">Clear lookup history</button>') +
+        '<button id="wipe-history" class="btn-ghost text-xs">Clear my lookup history</button>') +
+      card('Password', u.passwordChangedAt ? 'Last changed ' + fmtDate(u.passwordChangedAt) : 'Changing it signs out your other devices',
+        '<form id="pw-form" class="space-y-3" novalidate>' +
+          '<input id="pw-current" type="password" class="field" autocomplete="current-password" placeholder="Current password" />' +
+          '<div><input id="pw-new" type="password" class="field" autocomplete="new-password" placeholder="New password" />' + Pw.meterHtml('pw-meter') + '</div>' +
+          '<input id="pw-confirm" type="password" class="field" autocomplete="new-password" placeholder="Type the new password again" />' +
+          '<button type="submit" class="btn-primary text-xs">Change password</button>' +
+        '</form>') +
+      card('Sessions', 'Signed in on a shared or lost device?',
+        '<p class="text-xs text-slate-400 mb-3">Sign out of CIMI on every browser and device, including this one.</p>' +
+        '<button id="logout-all" class="btn-ghost text-xs">Sign out everywhere</button>') +
       '</div>';
 
     var startBtn = $('#mfa-start');
@@ -1156,7 +1303,6 @@
               return Api.me();
             }).then(function (res) {
               state.user = res.user;
-              Api.setSession(Api.getToken(), res.user);
               renderSettings(root);
             }).catch(function (err) { toast(err.message, 'error'); });
           });
@@ -1172,42 +1318,302 @@
           return Api.me();
         }).then(function (res) {
           state.user = res.user;
-          Api.setSession(Api.getToken(), res.user);
           renderSettings(root);
         }).catch(function (err) { toast(err.message, 'error'); });
       });
     }
 
     $('#wipe-history').addEventListener('click', function () {
-      Api.clearHistory().then(function () { toast('Lookup history cleared', 'success'); })
+      if (!window.confirm('Delete every lookup you have made? Other analysts\' history is kept.')) return;
+      Api.clearHistory().then(function (res) { toast(res.removed + ' lookups removed', 'success'); })
         .catch(function (err) { toast(err.message, 'error'); });
+    });
+
+    Pw.attach($('#pw-new'), $('#pw-meter'), function () { return { username: u.username, email: u.email }; });
+    $('#pw-form').addEventListener('submit', function (event) {
+      event.preventDefault();
+      var current = $('#pw-current').value;
+      var next = $('#pw-new').value;
+      var issue = Pw.problem(next, { username: u.username, email: u.email });
+      if (!current) return toast('Enter your current password', 'error');
+      if (issue) return toast(issue, 'error');
+      if (next !== $('#pw-confirm').value) return toast('The new passwords do not match', 'error');
+      Api.changePassword(current, next).then(function (res) {
+        state.user = res.user;
+        toast('Password changed. Other devices are signed out.', 'success');
+        renderSettings(root);
+      }).catch(function (err) { toast(err.message, 'error'); });
+    });
+
+    $('#logout-all').addEventListener('click', function () {
+      if (!window.confirm('Sign out of CIMI on every device, including this one?')) return;
+      Api.logoutAll().catch(function () {}).then(function () {
+        endSession();
+        toast('Signed out everywhere');
+      });
     });
   }
 
+  // ======================= watchlist =======================
+
+  function renderWatchlist(root) {
+    root.innerHTML =
+      card('Watch an indicator', 'IP, domain, URL, file hash or CVE. Re-screened every hour; you get an email if its verdict gets worse',
+        '<form id="watch-form" class="flex flex-col sm:flex-row gap-2" novalidate>' +
+          '<input id="watch-indicator" class="field mono sm:flex-[2]" placeholder="185.220.101.44" maxlength="2048" />' +
+          '<input id="watch-note" class="field sm:flex-1" placeholder="Note (optional)" maxlength="200" />' +
+          '<button type="submit" class="btn-primary shrink-0">Add</button>' +
+        '</form>' +
+        ((state.user && !state.user.email) ? '<p class="text-[11px] text-warn-400 mt-3">Your account has no email address, so alerts are recorded in the activity log but not emailed.</p>' : '')) +
+      '<div id="watch-list" class="mt-3">' + loading('Loading your watchlist…') + '</div>';
+
+    $('#watch-form').addEventListener('submit', function (event) {
+      event.preventDefault();
+      var value = $('#watch-indicator').value.trim();
+      if (!value) return $('#watch-indicator').focus();
+      var btn = event.target.querySelector('button');
+      btn.disabled = true;
+      Api.watchAdd(value, $('#watch-note').value.trim()).then(function (res) {
+        toast(res.item.indicator + ' is now on your watchlist', 'success');
+        event.target.reset();
+        loadWatchlist();
+      }).catch(function (err) { toast(err.message, 'error'); })
+        .finally(function () { btn.disabled = false; });
+    });
+    loadWatchlist();
+  }
+
+  function sparkline(history) {
+    if (!history || history.length < 2) return '<span class="text-slate-600">-</span>';
+    var w = 80, h = 20;
+    var pts = history.map(function (p, i) {
+      return (i * (w / (history.length - 1))).toFixed(1) + ',' + (h - (p.score / 100) * h).toFixed(1);
+    }).join(' ');
+    return '<svg viewBox="0 0 ' + w + ' ' + h + '" width="' + w + '" height="' + h + '" aria-label="score history">' +
+      '<polyline points="' + pts + '" fill="none" stroke="' + C.PALETTE.accent + '" stroke-width="1.5"/></svg>';
+  }
+
+  function loadWatchlist() {
+    var target = $('#watch-list');
+    if (!target) return;
+    Api.watchlist().then(function (data) {
+      if (!data.items.length) {
+        target.innerHTML = card('', '', C.emptyState('Nothing on your watchlist yet. Add an indicator above, or use "Add to watchlist" on a lookup result.'));
+        return;
+      }
+      target.innerHTML = card('Watched indicators', data.items.length + ' of ' + data.max,
+        '<div class="overflow-x-auto"><table class="tbl"><thead><tr>' +
+          '<th>Indicator</th><th>Verdict</th><th>Score</th><th>Trend</th><th>Last checked</th><th>Alerts</th><th></th>' +
+        '</tr></thead><tbody>' + data.items.map(function (w) {
+          return '<tr>' +
+            '<td class="truncate-cell"><button class="mono hover:text-brand-400" data-lookup="' + esc(w.indicator) + '">' + esc(w.indicator) + '</button>' +
+              (w.note ? '<p class="text-[11px] text-slate-500 truncate">' + esc(w.note) + '</p>' : '') + '</td>' +
+            '<td>' + pill(w.verdict) + ' ' + simBadge(w.simulated) + '</td>' +
+            '<td class="tabular-nums" style="color:' + scoreColor(w.score) + '">' + esc(w.score) + '</td>' +
+            '<td>' + sparkline(w.history) + '</td>' +
+            '<td class="text-[11px] text-slate-500">' + esc(w.lastCheckedAt ? fmtDate(w.lastCheckedAt) : 'never') +
+              (w.lastError ? '<p class="text-danger-400">' + esc(w.lastError) + '</p>' : '') +
+              (w.lastAlertAt ? '<p class="text-brand-400">alerted ' + esc(fmtDate(w.lastAlertAt)) + '</p>' : '') + '</td>' +
+            '<td><label class="switch" title="Email me when this gets worse"><input type="checkbox" data-watch-alerts="' + esc(w.id) + '"' + (w.alerts ? ' checked' : '') + '><span></span></label></td>' +
+            '<td class="whitespace-nowrap text-right">' +
+              '<button class="btn-ghost text-[11px]" data-watch-check="' + esc(w.id) + '">Check now</button> ' +
+              '<button class="btn-ghost text-[11px]" data-watch-remove="' + esc(w.id) + '">Remove</button></td>' +
+          '</tr>';
+        }).join('') + '</tbody></table></div>');
+
+      $$('[data-watch-check]', target).forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          btn.disabled = true;
+          btn.innerHTML = '<span class="spinner"></span>';
+          Api.watchCheck(btn.dataset.watchCheck).then(function () { loadWatchlist(); })
+            .catch(function (err) { toast(err.message, 'error'); loadWatchlist(); });
+        });
+      });
+      $$('[data-watch-remove]', target).forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          Api.watchRemove(btn.dataset.watchRemove).then(function () { toast('Removed from watchlist'); loadWatchlist(); })
+            .catch(function (err) { toast(err.message, 'error'); });
+        });
+      });
+      $$('[data-watch-alerts]', target).forEach(function (input) {
+        input.addEventListener('change', function () {
+          Api.watchAlerts(input.dataset.watchAlerts, input.checked)
+            .then(function () { toast(input.checked ? 'Email alerts on' : 'Email alerts off'); })
+            .catch(function (err) { input.checked = !input.checked; toast(err.message, 'error'); });
+        });
+      });
+      bindLookupLinks(target);
+    }).catch(function (err) { target.innerHTML = errorBox(err.message); });
+  }
+
+  // ======================= admin =======================
+
+  var AUDIT_FILTERS = [
+    ['', 'All events'], ['auth.login', 'Sign-ins'], ['auth.register', 'Sign-ups'], ['auth.password', 'Password changes and resets'],
+    ['auth.logout', 'Sign-outs'], ['admin.', 'Admin actions'], ['ioc.', 'Lookups'], ['watchlist.', 'Watchlist'],
+  ];
+
+  function renderAdmin(root) {
+    root.innerHTML =
+      '<div class="grid grid-cols-1 xl:grid-cols-3 gap-3">' +
+        card('Sign-up', 'Whether visitors can create their own accounts',
+          '<label class="flex items-center gap-3 text-sm text-slate-300"><span class="switch"><input id="admin-reg" type="checkbox"><span></span></span>Allow new accounts</label>' +
+          '<p class="text-[11px] text-slate-500 mt-3">Overrides <code>ALLOW_REGISTRATION</code> in <code>.env</code>. New accounts still have to confirm their email.</p>') +
+        card('Lookup history', 'Shared across all analysts',
+          '<p class="text-xs text-slate-400 mb-3">Delete every analyst\'s lookup history. This cannot be undone and is recorded in the activity log.</p>' +
+          '<button id="admin-wipe" class="btn-ghost text-xs">Clear all history</button>', 'xl:col-span-2') +
+      '</div>' +
+      '<div id="admin-users" class="mt-3">' + loading('Loading accounts…') + '</div>' +
+      '<div class="mt-3">' + card('Activity log', 'Newest first. Passwords, tokens and codes are never recorded',
+        '<div class="flex flex-wrap gap-2 mb-3 no-print">' +
+          '<select id="audit-filter" class="field" style="max-width:16rem">' + AUDIT_FILTERS.map(function (f) {
+            return '<option value="' + esc(f[0]) + '">' + esc(f[1]) + '</option>';
+          }).join('') + '</select>' +
+          '<button class="btn-ghost text-[11px]" data-print-report="CIMI activity log">Download PDF</button>' +
+        '</div><div id="audit-list">' + loading('Loading activity…') + '</div>') + '</div>';
+
+    Api.adminSettings().then(function (cfg) { $('#admin-reg').checked = cfg.registrationEnabled; }).catch(function () {});
+    $('#admin-reg').addEventListener('change', function (event) {
+      var on = event.target.checked;
+      Api.adminSaveSettings({ registrationEnabled: on }).then(function () {
+        state.site.registrationEnabled = on;
+        toast(on ? 'Sign-up is open' : 'Sign-up is closed', 'success');
+      }).catch(function (err) { event.target.checked = !on; toast(err.message, 'error'); });
+    });
+    $('#admin-wipe').addEventListener('click', function () {
+      if (!window.confirm('Delete the lookup history of every analyst? This cannot be undone.')) return;
+      Api.clearHistory(true).then(function (res) { toast(res.removed + ' lookups removed', 'success'); loadAudit(); })
+        .catch(function (err) { toast(err.message, 'error'); });
+    });
+    $('#audit-filter').addEventListener('change', loadAudit);
+    loadUsers();
+    loadAudit();
+  }
+
+  function loadUsers() {
+    var target = $('#admin-users');
+    if (!target) return;
+    var me = state.user || {};
+    Api.adminUsers().then(function (data) {
+      target.innerHTML = card('Accounts', data.items.length + ' total',
+        '<div class="overflow-x-auto"><table class="tbl"><thead><tr>' +
+          '<th>User</th><th>Role</th><th>Status</th><th>MFA</th><th>Last sign-in</th><th></th>' +
+        '</tr></thead><tbody>' + data.items.map(function (u) {
+          var status = u.disabled ? '<span class="pill pill-malicious">disabled</span>'
+            : !u.emailVerified ? '<span class="pill pill-suspicious">unconfirmed</span>'
+              : '<span class="pill pill-clean">active</span>';
+          var self = u.id === me.id;
+          var actions = self ? '<span class="text-[11px] text-slate-600">you</span>' :
+            (!u.emailVerified && !u.disabled ? '<button class="btn-ghost text-[11px]" data-user-action="resend-verification" data-user="' + esc(u.id) + '">Resend link</button> ' : '') +
+            '<button class="btn-ghost text-[11px]" data-user-action="' + (u.disabled ? 'enable' : 'disable') + '" data-user="' + esc(u.id) + '">' + (u.disabled ? 'Enable' : 'Disable') + '</button> ' +
+            '<button class="btn-ghost text-[11px]" data-user-delete="' + esc(u.id) + '" data-name="' + esc(u.username) + '">Delete</button>';
+          return '<tr>' +
+            '<td><p class="text-slate-200">' + esc(u.username) + '</p><p class="text-[11px] text-slate-500">' + esc(u.email || 'no email') + '</p></td>' +
+            '<td class="text-xs">' + esc(u.role) + '</td>' +
+            '<td>' + status + '</td>' +
+            '<td class="text-xs">' + (u.mfaEnabled ? 'on' : '<span class="text-slate-600">off</span>') + '</td>' +
+            '<td class="text-[11px] text-slate-500">' + esc(u.lastLoginAt ? fmtDate(u.lastLoginAt) : 'never') + '</td>' +
+            '<td class="whitespace-nowrap text-right">' + actions + '</td>' +
+          '</tr>';
+        }).join('') + '</tbody></table></div>');
+
+      $$('[data-user-action]', target).forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var action = btn.dataset.userAction;
+          Api.adminUserAction(btn.dataset.user, action).then(function () {
+            toast({ disable: 'Account disabled and signed out', enable: 'Account enabled', 'resend-verification': 'Confirmation link sent' }[action], 'success');
+            loadUsers(); loadAudit();
+          }).catch(function (err) { toast(err.message, 'error'); });
+        });
+      });
+      $$('[data-user-delete]', target).forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          if (!window.confirm('Delete the account "' + btn.dataset.name + '"? This cannot be undone.')) return;
+          Api.adminDeleteUser(btn.dataset.userDelete).then(function () {
+            toast('Account deleted', 'success');
+            loadUsers(); loadAudit();
+          }).catch(function (err) { toast(err.message, 'error'); });
+        });
+      });
+    }).catch(function (err) { target.innerHTML = errorBox(err.message); });
+  }
+
+  function loadAudit() {
+    var target = $('#audit-list');
+    if (!target) return;
+    Api.adminAudit($('#audit-filter').value).then(function (data) {
+      if (!data.items.length) { target.innerHTML = C.emptyState('No matching activity yet.'); return; }
+      target.innerHTML = '<div class="overflow-x-auto"><table class="tbl"><thead><tr>' +
+        '<th>When</th><th>Event</th><th>Who</th><th>Target</th><th>Detail</th><th>IP</th>' +
+        '</tr></thead><tbody>' + data.items.map(function (e) {
+          return '<tr>' +
+            '<td class="text-[11px] text-slate-500 whitespace-nowrap">' + esc(fmtDate(e.at)) + '</td>' +
+            '<td class="mono text-[11px]' + (e.outcome === 'failure' ? ' text-danger-400' : '') + '">' + esc(e.event) + (e.outcome === 'failure' ? ' ✕' : '') + '</td>' +
+            '<td class="text-xs">' + esc(e.actor || '-') + '</td>' +
+            '<td class="mono text-[11px] truncate-cell">' + esc(e.target || '') + '</td>' +
+            '<td class="text-[11px] text-slate-400">' + esc(e.detail || '') + '</td>' +
+            '<td class="mono text-[11px] text-slate-600">' + esc(e.ip || '') + '</td>' +
+          '</tr>';
+        }).join('') + '</tbody></table></div>';
+    }).catch(function (err) { target.innerHTML = errorBox(err.message); });
+  }
+
   // ======================= boot =======================
+
+  /** Drops everything held in memory about the signed-in analyst. */
+  function endSession() {
+    showAuthPanel('form');
+    state.user = null;
+    state.lastLookup = state.lastCorrelation = state.lastLogReport = null;
+    $('#page-root').innerHTML = '';
+    showLogin();
+  }
 
   function boot() {
     $('#tab-signin').addEventListener('click', function () { setAuthMode('signin'); });
     $('#tab-signup').addEventListener('click', function () { setAuthMode('signup'); });
     $('#login-form').addEventListener('submit', handleLoginSubmit);
+    $('#login-resend').addEventListener('click', function () { resendVerification($('#login-username').value.trim()); });
+    $('#verify-resend').addEventListener('click', function () { resendVerification(pendingVerification); });
+    $('#verify-back').addEventListener('click', function () { hideVerifyNotice(); setAuthMode('signin'); });
+    $('#forgot-link').addEventListener('click', showForgot);
+    $('#forgot-form').addEventListener('submit', handleForgotSubmit);
+    $('#forgot-back').addEventListener('click', function () { showAuthPanel('form'); setAuthMode('signin'); });
+    $('#force-change-form').addEventListener('submit', handleForceChange);
+    $('#force-cancel').addEventListener('click', function () {
+      Api.logout().catch(function () {});
+      showAuthPanel('form');
+      endSession();
+    });
+    $('#signup-meter-slot').innerHTML = Pw.meterHtml('signup-meter');
+    Pw.attach($('#login-password'), $('#signup-meter'), function () {
+      return { username: $('#login-username').value.trim(), email: $('#login-email').value.trim() };
+    });
+    $('#force-meter-slot').innerHTML = Pw.meterHtml('force-meter');
+    Pw.attach($('#force-new'), $('#force-meter'), function () { return { username: (state.user || {}).username }; });
+    document.addEventListener('click', function (event) {
+      var btn = event.target.closest && event.target.closest('[data-print-report]');
+      if (btn) printReport(btn.getAttribute('data-print-report'), btn.getAttribute('data-print-sub'));
+    });
+    window.addEventListener('cimi:session-ended', function () {
+      if (!state.user) return;
+      endSession();
+      toast('Your session ended. Sign in again.', 'error');
+    });
 
     $$('.nav-item').forEach(function (btn) {
       btn.addEventListener('click', function () { navigate(btn.dataset.page); });
     });
 
     $('#logout-btn').addEventListener('click', function () {
-      Api.clearSession();
-      state.user = null;
-      state.lastLookup = state.lastCorrelation = state.lastLogReport = null;
-      showLogin();
+      Api.logout().catch(function () { /* cookie is cleared server-side; nothing else to undo */ });
+      endSession();
       toast('Signed out');
     });
 
     $('#sidebar-toggle').addEventListener('click', openSidebar);
     $('#sidebar-backdrop').addEventListener('click', closeSidebar);
     $('#refresh-btn').addEventListener('click', function () { renderPage(); });
-    $$('[data-theme-toggle]').forEach(function (btn) { btn.addEventListener('click', toggleTheme); });
-    applyTheme(currentTheme());
 
     window.addEventListener('hashchange', function () {
       var page = location.hash.replace('#', '');
@@ -1219,17 +1625,14 @@
 
     loadSiteConfig();
 
-    if (Api.getToken()) {
-      Api.me().then(function (res) {
-        state.user = res.user;
-        showApp();
-      }).catch(function () {
-        Api.clearSession();
-        showLogin();
-      });
-    } else {
+    // The browser cannot see the HttpOnly cookie, so ask the server whether a session exists.
+    Api.me().then(function (res) {
+      state.user = res.user;
+      if (res.user.mustChangePassword) return showForceChange();
+      showApp();
+    }).catch(function () {
       showLogin();
-    }
+    });
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);

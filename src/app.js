@@ -9,7 +9,7 @@ const rateLimit = require('express-rate-limit');
 
 const config = require('./config');
 const cache = require('./services/cache');
-const { notFound, errorHandler } = require('./middleware/errors');
+const { notFound, errorHandler, asyncHandler } = require('./middleware/errors');
 
 const authRoutes = require('./routes/auth');
 const iocRoutes = require('./routes/ioc');
@@ -17,6 +17,10 @@ const feedRoutes = require('./routes/feeds');
 const logRoutes = require('./routes/logs');
 const correlationRoutes = require('./routes/correlation');
 const dashboardRoutes = require('./routes/dashboard');
+const watchlistRoutes = require('./routes/watchlist');
+const adminRoutes = require('./routes/admin');
+const siteSettings = require('./services/settings');
+const mailer = require('./services/mailer');
 
 function createApp() {
   const app = express();
@@ -61,6 +65,12 @@ function createApp() {
   app.use(express.json({ limit: '4mb' }));
   app.use(express.urlencoded({ extended: false, limit: '1mb' }));
 
+  // API responses carry account data; keep them out of the browser's disk cache.
+  app.use('/api', (req, res, next) => {
+    res.set('Cache-Control', 'no-store');
+    next();
+  });
+
   // --- Global API rate limit ----------------------------------------------
   app.use(
     '/api',
@@ -69,7 +79,7 @@ function createApp() {
       max: config.rateLimit.max,
       standardHeaders: true,
       legacyHeaders: false,
-      message: { error: 'Rate limit exceeded — slow down and try again shortly' },
+      message: { error: 'Rate limit exceeded. Try again in a few minutes.' },
     })
   );
 
@@ -89,14 +99,16 @@ function createApp() {
   });
 
   /** Public, non-sensitive site settings the frontend needs before sign-in. */
-  app.get('/api/site', (req, res) => {
+  app.get('/api/site', asyncHandler(async (req, res) => {
     res.json({
-      registrationEnabled: config.allowRegistration,
+      registrationEnabled: (await siteSettings.get()).registrationEnabled,
+      // Lets the sign-in page say that emails are printed in the server terminal.
+      emailConsole: !mailer.isConfigured(),
       analytics: config.analytics.plausibleDomain
         ? { provider: 'plausible', domain: config.analytics.plausibleDomain, src: config.analytics.plausibleSrc }
         : null,
     });
-  });
+  }));
 
   // --- Crawler files -------------------------------------------------------
   const baseUrl = (req) => config.publicUrl || `${req.protocol}://${req.get('host')}`;
@@ -123,6 +135,8 @@ function createApp() {
   app.use('/api/logs', logRoutes);
   app.use('/api/correlation', correlationRoutes);
   app.use('/api/dashboard', dashboardRoutes);
+  app.use('/api/watchlist', watchlistRoutes);
+  app.use('/api/admin', adminRoutes);
 
   // --- Static SPA ----------------------------------------------------------
   app.use(express.static(config.publicDir, { index: 'index.html', maxAge: '1h' }));

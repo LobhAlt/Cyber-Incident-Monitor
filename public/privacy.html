@@ -8,8 +8,7 @@
   <meta name="robots" content="index, follow" />
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-  <meta name="theme-color" content="#0b0b0d" />
-  <script>(function(){var t=null;try{t=localStorage.getItem("cimi-theme")}catch(e){}document.documentElement.setAttribute("data-theme",t==="light"?"light":"dark")})();</script>
+  <meta name="theme-color" content="#000000" />
   <link rel="stylesheet" href="/css/app.css" />
 </head>
 <body>
@@ -22,10 +21,14 @@
 
   <h2>1. What we store</h2>
   <ul>
-    <li><strong>Account details:</strong> your username, a scrypt hash of your password (never the password itself), and, if you enable multi-factor authentication, your TOTP secret. Stored in <code>users.json</code> on the server.</li>
+    <li><strong>Account details:</strong> your username, your email address (used only to confirm the account), a scrypt hash of your password (never the password itself), and, if you enable multi-factor authentication, your TOTP secret. Stored in <code>users.json</code> on the server.</li>
     <li><strong>Lookup history:</strong> every indicator you screen (IP address, domain, URL, file hash or CVE ID), the verdict, score, source country and matched techniques, together with your username and a timestamp. Kept to the newest 5,000 entries.</li>
     <li><strong>Log analysis reports:</strong> when you upload or paste a log, the file name, detected format, extracted indicators and their screening results are stored. The raw log text itself is processed in memory and is not written to disk. Kept to the newest 200 reports.</li>
-    <li><strong>In your browser:</strong> a session token, your theme preference and whether you dismissed the storage notice, all in <code>localStorage</code>. CIMI sets no cookies.</li>
+    <li><strong>Activity log:</strong> security events such as sign-ins (including failed attempts), sign-ups, password changes and resets, sign-outs, lookups and admin actions, each with the username, the IP address the request came from and a timestamp. Only admins can view it. Passwords, tokens and codes are never recorded. Kept to the newest 5,000 events.</li>
+    <li><strong>Watchlist:</strong> indicators you choose to watch, your optional note, and their screening history. The server re-screens them every hour and emails you if a verdict gets worse, unless you turn alerts off for that indicator.</li>
+    <li><strong>Password reset:</strong> when you ask for a reset, CIMI emails a one-time link valid for 30 minutes. Only a SHA-256 hash of its code is stored, and it is deleted once used.</li>
+    <li><strong>Email confirmation:</strong> when you sign up, CIMI emails you a one-time link. Only a SHA-256 hash of that link's code is stored, and it is deleted once used or after 24 hours.</li>
+    <li><strong>In your browser:</strong> one essential session cookie (<code>cimi_session</code>) marked HttpOnly and SameSite=Strict, so page scripts cannot read it and other sites cannot use it. It expires after 8 hours or when you sign out. The only item in <code>localStorage</code> is whether you dismissed the storage notice. No account details are stored in the browser.</li>
   </ul>
 
   <h2>2. Where your indicators go</h2>

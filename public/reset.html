@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Reset password | CIMI</title>
+  <meta name="robots" content="noindex" />
+  <meta name="referrer" content="no-referrer" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <meta name="theme-color" content="#000000" />
+  <link rel="stylesheet" href="/css/app.css" />
+</head>
+<body>
+<main class="doc" style="max-width:26rem">
+  <a class="doc-back" href="/">&larr; Back to sign in</a>
+  <p class="doc-meta">CIMI · Password reset</p>
+  <h1 id="reset-title">Choose a new password</h1>
+  <p id="reset-message">Pick a password you have not used here before. Saving it signs out every device on your account.</p>
+
+  <form id="reset-form" novalidate>
+    <label for="reset-password" class="reset-label">New password</label>
+    <input id="reset-password" type="password" class="field" autocomplete="new-password" required />
+    <div id="reset-meter-slot"></div>
+    <label for="reset-confirm" class="reset-label">Type it again</label>
+    <input id="reset-confirm" type="password" class="field" autocomplete="new-password" required />
+    <p id="reset-error" class="field-error" role="alert" hidden></p>
+    <p style="margin-top:1.25rem"><button id="reset-submit" type="submit" class="btn-primary">Save new password</button></p>
+  </form>
+  <p id="reset-done" hidden><a class="btn-primary" href="/">Go to sign in</a></p>
+
+  <footer class="doc-footer">
+    <a href="/privacy.html">Privacy Policy</a> &middot; <a href="/terms.html">Terms &amp; Conditions</a>
+  </footer>
+</main>
+<script src="/js/password.js"></script>
+<script src="/js/reset.js"></script>
+</body>
+</html>

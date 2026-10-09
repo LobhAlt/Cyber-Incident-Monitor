@@ -16,8 +16,10 @@ function errorHandler(err, req, res, _next) {
     // eslint-disable-next-line no-console
     console.error('[CIMI] Unhandled error:', err);
   }
+  const showMessage = status < 500 || err.expose === true;
   res.status(status).json({
-    error: status >= 500 ? 'Internal server error' : err.message,
+    error: showMessage ? err.message : 'Internal server error',
+    ...(status < 500 && typeof err.code === 'string' ? { code: err.code } : {}),
     ...(process.env.NODE_ENV !== 'production' && status >= 500 ? { detail: err.message } : {}),
   });
 }

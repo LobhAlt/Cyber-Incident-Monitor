@@ -6,7 +6,7 @@
   <title>CIMI: Cyber Incident Monitor in India</title>
   <meta name="description" content="Screen IPs, domains, URLs, file hashes and CVEs against VirusTotal, AbuseIPDB, AlienVault OTX, CISA KEV and CERT-In, and get one STIX 2.1 verdict per indicator." />
   <meta name="robots" content="index, follow" />
-  <meta name="theme-color" content="#0b0b0d" />
+  <meta name="theme-color" content="#000000" />
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
   <meta property="og:type" content="website" />
@@ -16,26 +16,17 @@
   <meta property="og:image" content="/og-image.png" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
-  <meta property="og:image:alt" content="CIMI shield logo on a dark background with the text Cyber Incident Monitor in India" />
+  <meta property="og:image:alt" content="White shield on a red square above the words Cyber Incident Monitor, on black" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="CIMI: Cyber Incident Monitor in India" />
   <meta name="twitter:description" content="STIX 2.1 threat-intelligence aggregation for Indian cyberspace." />
   <meta name="twitter:image" content="/og-image.png" />
-  <script>
-    // Apply the saved theme before first paint to avoid a flash. Default: dark.
-    (function () {
-      var t = null;
-      try { t = localStorage.getItem('cimi-theme'); } catch (e) {}
-      document.documentElement.setAttribute('data-theme', t === 'light' ? 'light' : 'dark');
-    })();
-  </script>
   <script src="/vendor/tailwind.js"></script>
   <script>
     // Colour scales resolve to CSS variables (see css/app.css) so every utility
     // class follows the active theme. <alpha-value> keeps opacity modifiers working.
     var v = function (name) { return 'rgb(var(--' + name + ') / <alpha-value>)'; };
     tailwind.config = {
-      darkMode: ['class', '[data-theme="dark"]'],
       theme: {
         extend: {
           colors: {
@@ -48,6 +39,8 @@
             white: v('white'),
           },
           fontFamily: { mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'] },
+          // Minimal look: near-square corners everywhere, including utility classes in app.js.
+          borderRadius: { md: '3px', lg: '4px', xl: '4px', '2xl': '6px' },
         },
       },
     };
@@ -57,42 +50,41 @@
 <body class="bg-ink-900 text-slate-200 antialiased min-h-screen">
 
 <!-- ======================= LOGIN ======================= -->
-<div id="login-view" class="hidden min-h-screen items-center justify-center px-4 py-10">
-  <button type="button" class="theme-toggle theme-toggle-floating" data-theme-toggle title="Switch theme" aria-label="Switch theme">
-      <svg aria-hidden="true" class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20.5 14.5A8.5 8.5 0 019.5 3.5a8.5 8.5 0 1011 11z" stroke-linejoin="round"/></svg>
-      <svg aria-hidden="true" class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" stroke-linecap="round"/></svg>
-  </button>
+<div id="login-view" class="hidden login-bg min-h-screen items-center justify-center px-4 py-10">
   <div class="w-full max-w-md">
-    <div class="text-center mb-8">
-      <div class="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-600/15 ring-1 ring-brand-500/40 mb-4">
-        <svg viewBox="0 0 24 24" class="h-7 w-7 text-brand-400" fill="none" stroke="currentColor" stroke-width="1.8" role="img" aria-label="CIMI shield logo">
-          <path d="M12 3l7 3v6c0 4.4-2.9 7.9-7 9-4.1-1.1-7-4.6-7-9V6l7-3z" stroke-linejoin="round"/>
-          <path d="M9 12l2 2 4-4" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-      </div>
-      <h1 class="text-2xl font-semibold tracking-tight text-white">CIMI</h1>
-      <p class="text-sm text-slate-400 mt-1">Cyber Incident Monitor in India</p>
-      <p class="text-xs text-slate-500 mt-1">STIX 2.1-compliant threat intelligence aggregation</p>
+    <div class="mb-8">
+      <span class="brand-mark brand-mark-lg mb-6"><svg viewBox="0 0 24 24" class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="2" role="img" aria-label="CIMI shield logo"><path d="M12 3l7 3v6c0 4.4-2.9 7.9-7 9-4.1-1.1-7-4.6-7-9V6l7-3z" stroke-linejoin="round"/></svg></span>
+      <p class="eyebrow flex items-center gap-2 mb-2"><span class="live-dot"></span>Threat intelligence · India</p>
+      <h1 class="text-3xl font-bold tracking-tight text-white">Cyber Incident Monitor<span class="text-brand-500">.</span></h1>
+      <p class="text-sm text-slate-500 mt-2">One STIX 2.1 verdict per indicator, from five sources.</p>
     </div>
 
-    <div class="rounded-2xl bg-ink-850 ring-1 ring-white/10 p-6 shadow-2xl">
-      <div class="flex gap-1 p-1 rounded-lg bg-ink-800 mb-5" role="tablist">
-        <button id="tab-signin" class="auth-tab flex-1 rounded-md px-3 py-2 text-sm font-medium" aria-selected="true">Sign in</button>
-        <button id="tab-signup" class="auth-tab flex-1 rounded-md px-3 py-2 text-sm font-medium" aria-selected="false">Create account</button>
+    <div class="bg-ink-850 border border-white/10 p-6">
+      <div class="flex mb-6" role="tablist">
+        <button id="tab-signin" class="auth-tab flex-1 px-3 py-2.5 text-sm font-medium" aria-selected="true">Sign in</button>
+        <button id="tab-signup" class="auth-tab flex-1 px-3 py-2.5 text-sm font-medium" aria-selected="false">Create account</button>
       </div>
 
       <form id="login-form" class="space-y-4" novalidate>
         <div>
-          <label for="login-username" class="block text-xs font-medium text-slate-400 mb-1.5">Analyst username</label>
-          <input id="login-username" name="username" autocomplete="username" required minlength="3" maxlength="64"
+          <label id="login-username-label" for="login-username" class="block text-xs font-medium text-slate-400 mb-1.5">Username or email</label>
+          <input id="login-username" name="username" autocomplete="username" required minlength="3" maxlength="254"
                  class="field" placeholder="analyst" aria-describedby="login-username-error" />
           <p id="login-username-error" class="field-error hidden" role="alert"></p>
+        </div>
+        <div id="email-wrap" class="hidden">
+          <label for="login-email" class="block text-xs font-medium text-slate-400 mb-1.5">Email</label>
+          <input id="login-email" name="email" type="email" autocomplete="email" maxlength="254"
+                 class="field" placeholder="you@yourcollege.edu" aria-describedby="login-email-error" />
+          <p id="login-email-error" class="field-error hidden" role="alert"></p>
         </div>
         <div>
           <label for="login-password" class="block text-xs font-medium text-slate-400 mb-1.5">Password</label>
           <input id="login-password" name="password" type="password" autocomplete="current-password" required
                  class="field" placeholder="Your password" aria-describedby="login-password-error" />
           <p id="login-password-error" class="field-error hidden" role="alert"></p>
+          <div id="signup-meter-slot" class="hidden"></div>
+          <button id="forgot-link" type="button" class="mt-2 text-[11px] text-slate-500 hover:text-white underline underline-offset-2">Forgot password?</button>
         </div>
         <!-- Honeypot: invisible to people, tempting to bots. Server ignores signups that fill it. -->
         <div class="hp-field" aria-hidden="true">
@@ -104,17 +96,75 @@
           <input id="login-mfa" name="mfaToken" inputmode="numeric" maxlength="6" autocomplete="one-time-code"
                  class="field font-mono tracking-[0.4em]" placeholder="000000" />
         </div>
-        <p id="login-error" class="hidden text-sm text-danger-400 bg-danger-500/10 ring-1 ring-danger-500/25 rounded-lg px-3 py-2"></p>
+        <div id="login-error-wrap" class="hidden text-sm text-danger-400 bg-danger-500/10 border-l-2 border-danger-500 px-3 py-2">
+          <p id="login-error"></p>
+          <button id="login-resend" type="button" class="hidden mt-2 text-xs text-white underline underline-offset-2">Send the confirmation email again</button>
+        </div>
         <button id="login-submit" type="submit" class="btn-primary w-full">Sign in</button>
         <p id="signup-terms" class="hidden text-[11px] text-slate-500 text-center">By creating an account you agree to the <a href="/terms.html" class="underline hover:text-brand-400">Terms</a> and <a href="/privacy.html" class="underline hover:text-brand-400">Privacy Policy</a>.</p>
       </form>
 
+      <div id="verify-notice" class="hidden" role="status">
+        <p class="eyebrow mb-3">Step 2 of 2</p>
+        <h2 class="text-lg font-semibold text-white mb-2">Check your email</h2>
+        <p class="text-sm text-slate-400 leading-relaxed">We sent a confirmation link to <span id="verify-email" class="text-white break-all"></span>. Open it to activate your account, then sign in. The link expires in 24 hours.</p>
+        <p id="verify-console" class="hidden mt-3 text-xs text-warn-400 leading-relaxed">This server has no mail server configured, so the link was printed in the terminal where CIMI is running.</p>
+        <div class="mt-5 flex flex-wrap gap-2">
+          <button id="verify-resend" type="button" class="btn-ghost">Resend link</button>
+          <button id="verify-back" type="button" class="btn-ghost">Back to sign in</button>
+        </div>
+      </div>
+
+      <form id="forgot-form" class="hidden space-y-4" novalidate>
+        <div>
+          <p class="eyebrow mb-3">Password reset</p>
+          <h2 class="text-lg font-semibold text-white mb-2">Forgot your password?</h2>
+          <p class="text-sm text-slate-400 leading-relaxed">Enter your username or email. If it matches an account with an email address, we will send a reset link that works for 30 minutes.</p>
+        </div>
+        <div>
+          <label for="forgot-login" class="block text-xs font-medium text-slate-400 mb-1.5">Username or email</label>
+          <input id="forgot-login" class="field" autocomplete="username" maxlength="254" required />
+        </div>
+        <p id="forgot-status" class="hidden text-sm text-slate-300 border-l-2 border-white/40 pl-3" role="status"></p>
+        <div class="flex flex-wrap gap-2">
+          <button id="forgot-submit" type="submit" class="btn-primary">Send reset link</button>
+          <button id="forgot-back" type="button" class="btn-ghost">Back to sign in</button>
+        </div>
+        <p class="text-[11px] text-slate-600 leading-relaxed">The built-in admin account has no email address. If its password is lost, delete <code>data/users.json</code> on the server to recreate it with the default password.</p>
+      </form>
+
+      <form id="force-change-form" class="hidden space-y-4" novalidate>
+        <div>
+          <p class="eyebrow mb-3">One more step</p>
+          <h2 class="text-lg font-semibold text-white mb-2">Set your own password</h2>
+          <p class="text-sm text-slate-400 leading-relaxed">This account still uses the default password from the README, which anyone can look up. Choose a new one to continue.</p>
+        </div>
+        <div>
+          <label for="force-current" class="block text-xs font-medium text-slate-400 mb-1.5">Current password</label>
+          <input id="force-current" type="password" class="field" autocomplete="current-password" required />
+        </div>
+        <div>
+          <label for="force-new" class="block text-xs font-medium text-slate-400 mb-1.5">New password</label>
+          <input id="force-new" type="password" class="field" autocomplete="new-password" required />
+          <div id="force-meter-slot"></div>
+        </div>
+        <div>
+          <label for="force-confirm" class="block text-xs font-medium text-slate-400 mb-1.5">Type it again</label>
+          <input id="force-confirm" type="password" class="field" autocomplete="new-password" required />
+        </div>
+        <p id="force-error" class="hidden text-sm text-danger-400 bg-danger-500/10 border-l-2 border-danger-500 px-3 py-2" role="alert"></p>
+        <div class="flex flex-wrap gap-2">
+          <button id="force-submit" type="submit" class="btn-primary">Save and continue</button>
+          <button id="force-cancel" type="button" class="btn-ghost">Sign out</button>
+        </div>
+      </form>
+
       <p id="login-hint" class="mt-4 text-xs text-slate-500 text-center leading-relaxed"></p>
     </div>
-    <p class="mt-6 text-center text-[11px] text-slate-600">
+    <p class="mt-6 text-[11px] text-slate-600">
       G H Raisoni College of Engineering &amp; Management, Nagpur · CSE (Cyber Security) · Session 2026-27
     </p>
-    <p class="mt-2 text-center text-[11px] text-slate-600">
+    <p class="mt-2 text-[11px] text-slate-600">
       <a href="/privacy.html" class="hover:text-brand-400 underline underline-offset-2">Privacy Policy</a> · <a href="/terms.html" class="hover:text-brand-400 underline underline-offset-2">Terms &amp; Conditions</a>
     </p>
   </div>
@@ -125,16 +175,12 @@
   <div class="flex min-h-screen">
 
     <!-- Sidebar -->
-    <aside id="sidebar" class="fixed lg:static inset-y-0 left-0 z-40 w-64 shrink-0 bg-ink-850 ring-1 ring-white/10 flex flex-col -translate-x-full lg:translate-x-0 transition-transform duration-200">
+    <aside id="sidebar" class="fixed lg:static inset-y-0 left-0 z-40 w-64 shrink-0 bg-ink-850 border-r border-white/10 flex flex-col -translate-x-full lg:translate-x-0 transition-transform duration-200">
       <div class="flex items-center gap-3 px-5 h-16 border-b border-white/10">
-        <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-600/15 ring-1 ring-brand-500/40">
-          <svg viewBox="0 0 24 24" class="h-5 w-5 text-brand-400" fill="none" stroke="currentColor" stroke-width="1.8" role="img" aria-label="CIMI shield logo">
-            <path d="M12 3l7 3v6c0 4.4-2.9 7.9-7 9-4.1-1.1-7-4.6-7-9V6l7-3z" stroke-linejoin="round"/>
-          </svg>
-        </div>
+        <span class="brand-mark"><svg viewBox="0 0 24 24" class="h-[18px] w-[18px]" fill="none" stroke="currentColor" stroke-width="2" role="img" aria-label="CIMI shield logo"><path d="M12 3l7 3v6c0 4.4-2.9 7.9-7 9-4.1-1.1-7-4.6-7-9V6l7-3z" stroke-linejoin="round"/></svg></span>
         <div>
-          <p class="text-sm font-semibold text-white leading-tight">CIMI</p>
-          <p class="text-[10px] text-slate-500 leading-tight">Threat Intel Platform</p>
+          <p class="text-sm font-bold text-white leading-tight tracking-tight">CIMI<span class="text-brand-500">.</span></p>
+          <p class="eyebrow leading-tight mt-0.5" style="font-size:9px">Threat Intel</p>
         </div>
       </div>
 
@@ -155,6 +201,10 @@
           <svg aria-hidden="true" class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M14 3H6.5A1.5 1.5 0 005 4.5v15A1.5 1.5 0 006.5 21h11a1.5 1.5 0 001.5-1.5V8l-5-5z" stroke-linejoin="round"/><path d="M14 3v5h5M8.5 13h7M8.5 17h4" stroke-linecap="round"/></svg>
           Log Analysis
         </button>
+        <button class="nav-item" data-page="watchlist">
+          <svg aria-hidden="true" class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z" stroke-linejoin="round"/><circle cx="12" cy="12" r="3"/></svg>
+          Watchlist
+        </button>
         <button class="nav-item" data-page="feeds">
           <svg aria-hidden="true" class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 11a9 9 0 019 9M4 4a16 16 0 0116 16" stroke-linecap="round"/><circle cx="5" cy="19" r="1.6" fill="currentColor" stroke="none"/></svg>
           Threat Feeds
@@ -163,12 +213,16 @@
           <svg aria-hidden="true" class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.6 1.6 0 00-1.8-.3 1.6 1.6 0 00-1 1.5V21a2 2 0 11-4 0v-.1A1.6 1.6 0 008 19.4a1.6 1.6 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.6 1.6 0 00.3-1.8 1.6 1.6 0 00-1.5-1H2a2 2 0 110-4h.1A1.6 1.6 0 004.6 8a1.6 1.6 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.6 1.6 0 001.8.3H9a1.6 1.6 0 001-1.5V2a2 2 0 114 0v.1a1.6 1.6 0 001 1.5 1.6 1.6 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.6 1.6 0 00-.3 1.8V9a1.6 1.6 0 001.5 1H22a2 2 0 110 4h-.1a1.6 1.6 0 00-1.5 1z"/></svg>
           Settings
         </button>
+        <button class="nav-item hidden" data-page="admin" id="nav-admin">
+          <svg aria-hidden="true" class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 3l7 3v6c0 4.4-2.9 7.9-7 9-4.1-1.1-7-4.6-7-9V6l7-3z" stroke-linejoin="round"/><path d="M12 8v4M12 15.5v.5" stroke-linecap="round"/></svg>
+          Admin
+        </button>
       </nav>
 
       <div class="p-3 border-t border-white/10">
         <div id="provider-status" class="mb-3 space-y-1.5 text-[11px]"></div>
-        <div class="flex items-center gap-2.5 px-2 py-2 rounded-lg bg-ink-800">
-          <div class="h-8 w-8 rounded-full bg-brand-600/20 ring-1 ring-brand-500/30 grid place-items-center text-xs font-semibold text-brand-400" id="user-initial">A</div>
+        <div class="flex items-center gap-2.5 px-2 py-2 border border-white/10 rounded-lg">
+          <div class="h-8 w-8 rounded-md bg-ink-700 grid place-items-center text-xs font-semibold text-white" id="user-initial">A</div>
           <div class="min-w-0 flex-1">
             <p id="user-name" class="text-xs font-medium text-white truncate">analyst</p>
             <p id="user-role" class="text-[10px] text-slate-500">analyst</p>
@@ -184,20 +238,17 @@
 
     <!-- Main -->
     <div class="flex-1 min-w-0 flex flex-col">
-      <header class="sticky top-0 z-20 h-16 flex items-center gap-3 px-4 sm:px-6 bg-ink-900/85 backdrop-blur border-b border-white/10">
+      <header class="sticky top-0 z-20 h-16 flex items-center gap-3 px-4 sm:px-6 bg-ink-900 border-b border-white/10">
+        <span class="accent-line"></span>
         <button id="sidebar-toggle" class="lg:hidden p-2 -ml-2 rounded-md hover:bg-white/5 text-slate-300">
           <svg aria-hidden="true" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h16M4 12h16M4 18h16" stroke-linecap="round"/></svg>
         </button>
         <div class="min-w-0">
-          <h2 id="page-title" class="text-base font-semibold text-white truncate">Security Dashboard</h2>
+          <h2 id="page-title" class="text-base font-semibold tracking-tight text-white truncate">Security Dashboard</h2>
           <p id="page-subtitle" class="text-[11px] text-slate-500 truncate">Loading…</p>
         </div>
         <div class="ml-auto flex items-center gap-2">
-          <span id="demo-badge" class="hidden text-[10px] font-semibold uppercase tracking-wider px-2 py-1 rounded-md bg-warn-500/15 text-warn-400 ring-1 ring-warn-500/30">Simulated data</span>
-          <button type="button" class="theme-toggle" data-theme-toggle title="Switch theme" aria-label="Switch theme">
-      <svg aria-hidden="true" class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20.5 14.5A8.5 8.5 0 019.5 3.5a8.5 8.5 0 1011 11z" stroke-linejoin="round"/></svg>
-      <svg aria-hidden="true" class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" stroke-linecap="round"/></svg>
-          </button>
+          <span id="demo-badge" class="hidden text-[10px] font-semibold uppercase tracking-wider px-2 py-1 border border-brand-500/50 text-brand-400">Simulated data</span>
           <button id="refresh-btn" class="btn-ghost text-xs">
             <svg aria-hidden="true" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 11a8 8 0 10-2.3 5.7M20 5v6h-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
             Refresh
@@ -205,6 +256,7 @@
         </div>
       </header>
 
+      <div id="print-header" class="print-only px-6 pt-6"></div>
       <main id="page-root" class="flex-1 p-4 sm:p-6 max-w-[1500px] w-full"></main>
 
       <footer class="px-6 py-4 text-[11px] text-slate-600 border-t border-white/5 flex flex-wrap gap-x-4 gap-y-1">
@@ -216,7 +268,7 @@
 </div>
 
 <div id="consent" class="consent hidden" role="dialog" aria-live="polite" aria-label="Storage and analytics notice">
-  <p>CIMI keeps your sign-in session and theme choice in this browser's local storage and sets no cookies. <span id="consent-analytics-text" class="hidden">The operator also uses cookie-less, anonymous page-view analytics, which run only if you allow them.</span> See the <a href="/privacy.html">Privacy Policy</a>.</p>
+  <p>CIMI sets one essential cookie to keep you signed in. Page scripts cannot read it, and it ends when you sign out. The only thing kept in this browser's local storage is your answer to this notice. <span id="consent-analytics-text" class="hidden">The operator also uses cookie-less, anonymous page-view analytics, which run only if you allow them.</span> See the <a href="/privacy.html">Privacy Policy</a>.</p>
   <div class="consent-actions">
     <button id="consent-accept" type="button" class="btn-primary">OK</button>
     <button id="consent-essential" type="button" class="btn-ghost hidden">Essential only</button>
@@ -225,6 +277,7 @@
 
 <div id="toast-root" class="fixed bottom-5 right-5 z-50 space-y-2 w-80 max-w-[calc(100vw-2.5rem)]"></div>
 
+<script src="/js/password.js"></script>
 <script src="/js/charts.js"></script>
 <script src="/js/api.js"></script>
 <script src="/js/app.js"></script>

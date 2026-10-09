@@ -16,6 +16,10 @@ const FILES = {
   iocHistory: 'ioc_history.json',
   logReports: 'log_reports.json',
   advisories: 'advisories.json',
+  audit: 'audit_log.json',
+  watchlist: 'watchlist.json',
+  settings: 'settings.json',
+  revokedSessions: 'revoked_sessions.json',
 };
 
 const DEFAULTS = {
@@ -23,6 +27,10 @@ const DEFAULTS = {
   iocHistory: [],
   logReports: [],
   advisories: [],
+  audit: [],
+  watchlist: [],
+  settings: {},
+  revokedSessions: [],
 };
 
 const queues = new Map();

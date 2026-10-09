@@ -6,6 +6,7 @@ const store = require('./src/services/store');
 const authService = require('./src/services/auth');
 const certin = require('./src/services/providers/certin');
 const cisakev = require('./src/services/providers/cisakev');
+const watchlist = require('./src/services/watchlist');
 
 async function bootstrap() {
   store.ensureDataDir();
@@ -21,14 +22,15 @@ async function bootstrap() {
     /* eslint-disable no-console */
     console.log('');
     console.log('  ╔══════════════════════════════════════════════════════════════╗');
-    console.log('  ║   CIMI — Cyber Incident Monitor in India                     ║');
+    console.log('  ║   CIMI · Cyber Incident Monitor in India                     ║');
     console.log('  ║   STIX 2.1-compliant threat intelligence aggregation         ║');
     console.log('  ╚══════════════════════════════════════════════════════════════╝');
     console.log('');
     console.log(`   ▸ URL           http://localhost:${config.port}`);
     console.log(`   ▸ Environment   ${config.env}`);
-    console.log(`   ▸ Live sources  ${live.length ? live.join(', ') : 'none (simulator active — add API keys in .env)'}`);
+    console.log(`   ▸ Live sources  ${live.length ? live.join(', ') : 'none (simulator active; add API keys in .env)'}`);
     console.log(`   ▸ Sign in as    ${admin.username} / ${config.defaultAdmin.password}`);
+    console.log(`   ▸ Email         ${config.mail.host ? `SMTP via ${config.mail.host}` : 'not configured (confirmation links print here)'}`);
     console.log('');
     /* eslint-enable no-console */
   });
@@ -44,13 +46,15 @@ async function bootstrap() {
     const timer = setInterval(() => {
       certin.fetchAdvisories({ force: true }).catch(() => {});
       cisakev.catalog().catch(() => {});
+      // Re-screen watched indicators and email owners whose verdicts got worse.
+      watchlist.checkAll().catch((err) => console.error('[CIMI] Watchlist check failed:', err.message)); // eslint-disable-line no-console
     }, config.scheduler.intervalMs);
     if (timer.unref) timer.unref();
   }
 
   function shutdown(signal) {
     // eslint-disable-next-line no-console
-    console.log(`\n[CIMI] ${signal} received — shutting down.`);
+    console.log(`\n[CIMI] ${signal} received, shutting down.`);
     server.close(() => process.exit(0));
     setTimeout(() => process.exit(0), 5000).unref();
   }

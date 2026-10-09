@@ -1,53 +1,20 @@
-/* CIMI thin REST client with session-token handling. */
+/* CIMI thin REST client.
+   The session lives in an HttpOnly cookie set by the server. This file never
+   sees, stores or forwards the session token, and nothing about the signed-in
+   user is written to localStorage or sessionStorage. */
 (function (global) {
   'use strict';
 
-  var TOKEN_KEY = 'cimi.token';
-  var USER_KEY = 'cimi.user';
-
-  function readStorage(key) {
-    try { return global.localStorage.getItem(key); } catch (e) { return null; }
-  }
-  function writeStorage(key, value) {
-    try {
-      if (value === null) global.localStorage.removeItem(key);
-      else global.localStorage.setItem(key, value);
-    } catch (e) { /* private mode: session stays in memory only */ }
-  }
-
-  var memoryToken = null;
-  var memoryUser = null;
-
   var Api = {
-    getToken: function () { return memoryToken || readStorage(TOKEN_KEY); },
-    getUser: function () {
-      if (memoryUser) return memoryUser;
-      var raw = readStorage(USER_KEY);
-      if (!raw) return null;
-      try { return JSON.parse(raw); } catch (e) { return null; }
-    },
-    setSession: function (token, user) {
-      memoryToken = token;
-      memoryUser = user;
-      writeStorage(TOKEN_KEY, token);
-      writeStorage(USER_KEY, JSON.stringify(user));
-    },
-    clearSession: function () {
-      memoryToken = null;
-      memoryUser = null;
-      writeStorage(TOKEN_KEY, null);
-      writeStorage(USER_KEY, null);
-    },
-
     request: function (path, options) {
       options = options || {};
       var headers = { Accept: 'application/json' };
       if (options.body !== undefined) headers['Content-Type'] = 'application/json';
-      var token = Api.getToken();
-      if (token) headers.Authorization = 'Bearer ' + token;
 
       return fetch('/api' + path, {
         method: options.method || 'GET',
+        credentials: 'same-origin',
+        cache: 'no-store',
         headers: Object.assign(headers, options.headers || {}),
         body: options.body === undefined ? undefined : JSON.stringify(options.body),
       }).then(function (res) {
@@ -58,6 +25,10 @@
             err.status = res.status;
             err.code = data && data.code;
             err.payload = data;
+            // A signed-in call that comes back 401 means the session ended (expired or signed out elsewhere).
+            if (res.status === 401 && path.indexOf('/auth/') !== 0) {
+              global.dispatchEvent(new CustomEvent('cimi:session-ended'));
+            }
             throw err;
           }
           return data;
@@ -72,7 +43,30 @@
     // --- endpoints ---------------------------------------------------------
     health: function () { return Api.get('/health'); },
     login: function (payload) { return Api.post('/auth/login', payload); },
+    logout: function () { return Api.post('/auth/logout', {}); },
     registerUser: function (payload) { return Api.post('/auth/register', payload); },
+    verifyEmail: function (token) { return Api.post('/auth/verify-email', { token: token }); },
+    resendVerification: function (login) { return Api.post('/auth/resend-verification', { login: login }); },
+    forgotPassword: function (login) { return Api.post('/auth/forgot-password', { login: login }); },
+    changePassword: function (currentPassword, newPassword) {
+      return Api.post('/auth/change-password', { currentPassword: currentPassword, newPassword: newPassword });
+    },
+    logoutAll: function () { return Api.post('/auth/logout-all', {}); },
+
+    watchlist: function () { return Api.get('/watchlist'); },
+    watchAdd: function (indicator, note) { return Api.post('/watchlist', { indicator: indicator, note: note }); },
+    watchCheck: function (id) { return Api.post('/watchlist/' + encodeURIComponent(id) + '/check', {}); },
+    watchAlerts: function (id, alerts) {
+      return Api.request('/watchlist/' + encodeURIComponent(id), { method: 'PATCH', body: { alerts: alerts } });
+    },
+    watchRemove: function (id) { return Api.del('/watchlist/' + encodeURIComponent(id)); },
+
+    adminUsers: function () { return Api.get('/admin/users'); },
+    adminUserAction: function (id, action) { return Api.post('/admin/users/' + encodeURIComponent(id) + '/' + action, {}); },
+    adminDeleteUser: function (id) { return Api.del('/admin/users/' + encodeURIComponent(id)); },
+    adminAudit: function (event) { return Api.get('/admin/audit?limit=300' + (event ? '&event=' + encodeURIComponent(event) : '')); },
+    adminSettings: function () { return Api.get('/admin/settings'); },
+    adminSaveSettings: function (patch) { return Api.request('/admin/settings', { method: 'PUT', body: patch }); },
     me: function () { return Api.get('/auth/me'); },
     mfaSetup: function () { return Api.post('/auth/mfa/setup', {}); },
     mfaConfirm: function (token) { return Api.post('/auth/mfa/confirm', { token: token }); },
@@ -81,7 +75,7 @@
     lookup: function (indicator, type) { return Api.post('/ioc/lookup', { indicator: indicator, type: type }); },
     bulk: function (list) { return Api.post('/ioc/bulk', { indicators: list }); },
     history: function (limit) { return Api.get('/ioc/history?limit=' + (limit || 50)); },
-    clearHistory: function () { return Api.del('/ioc/history'); },
+    clearHistory: function (all) { return Api.del('/ioc/history' + (all ? '?scope=all' : '')); },
 
     dashboard: function (days) { return Api.get('/dashboard?days=' + (days || 14)); },
     correlate: function (list) { return Api.post('/correlation', { indicators: list }); },

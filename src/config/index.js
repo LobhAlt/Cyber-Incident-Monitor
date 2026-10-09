@@ -86,6 +86,22 @@ const config = {
   publicUrl: (process.env.PUBLIC_URL || '').trim().replace(/\/+$/, ''),
   forceHttps: bool(process.env.FORCE_HTTPS, false),
   allowRegistration: bool(process.env.ALLOW_REGISTRATION, true),
+
+  // Session cookie: HttpOnly so page scripts can never read the token.
+  sessionCookie: 'cimi_session',
+
+  // Outgoing mail for account verification. Without SMTP_HOST the link is
+  // printed to the server console instead of being emailed.
+  mail: {
+    host: (process.env.SMTP_HOST || '').trim(),
+    port: int(process.env.SMTP_PORT, 587),
+    secure: bool(process.env.SMTP_SECURE, false),
+    user: (process.env.SMTP_USER || '').trim(),
+    pass: process.env.SMTP_PASS || '',
+    from: (process.env.MAIL_FROM || '').trim(),
+  },
+  emailVerifyTtlMs: int(process.env.EMAIL_VERIFY_TTL_MS, 24 * 60 * 60 * 1000),
+
   analytics: {
     // Privacy-friendly, cookie-less analytics (Plausible). Loaded only after the
     // visitor accepts in the consent banner; nothing is loaded when unset.

@@ -1,4 +1,4 @@
-# CIMI — Cyber Incident Monitor in India
+# CIMI: Cyber Incident Monitor in India
 
 A real-time, **STIX 2.1-compliant threat-intelligence aggregation platform** purpose-built
 around Indian cyberspace.
@@ -18,23 +18,27 @@ results into a single composite verdict per Indicator of Compromise.
 
 ## 1. Quick start
 
+**Easiest:** double-click **`Start CIMI.command`** (macOS) or **`Start CIMI.bat`** (Windows).
+
+**Or from a terminal:**
+
 ```bash
-# 1. install dependencies (5 packages, no build step)
-npm install
-
-# 2. create your config
-cp .env.example .env
-
-# 3. run
 npm start
 ```
 
-Open **http://localhost:3000** and sign in with:
+Either way, the launcher does all the setup on first run. It creates `.env` from
+`.env.example`, installs dependencies, picks a free port if 3000 is taken, and opens the
+dashboard in your browser. In VS Code you can also press **F5** ("Start CIMI").
+Set `OPEN_BROWSER=false` in `.env` to stop it opening a browser tab.
+
+Sign in at **http://localhost:3000** with:
 
 | | |
 |---|---|
 | Username | `analyst` |
 | Password | `Cimi@2026` |
+
+On first sign-in CIMI makes you replace this password, because it is published here.
 
 Both are configurable in `.env` (`DEFAULT_ADMIN_USER` / `DEFAULT_ADMIN_PASSWORD`).
 The account is created automatically on first boot.
@@ -42,7 +46,7 @@ The account is created automatically on first boot.
 Run the test suite at any time:
 
 ```bash
-npm test     # 43 checks: unit + full API + static assets
+npm test     # 72 checks: unit + full API + static assets
 ```
 
 ### Requirements
@@ -62,29 +66,29 @@ CIMI runs **with or without** provider credentials.
 | VirusTotal | `VIRUSTOTAL_API_KEY` | 4 req/min, 500/day | falls back to the simulator |
 | AbuseIPDB | `ABUSEIPDB_API_KEY` | 1,000 checks/day | falls back to the simulator |
 | AlienVault OTX | `OTX_API_KEY` | generous | falls back to the simulator |
-| CISA KEV | — (public feed) | unlimited | offline sample catalog |
-| CERT-In | — (scraped) | — | offline advisory sample |
+| CISA KEV | none (public feed) | unlimited | offline sample catalog |
+| CERT-In | none (scraped) | n/a | offline advisory sample |
 
 **The simulator** is a deterministic offline intelligence generator: the verdict for an
 indicator is derived from a SHA-256 of the indicator itself, so the same value always
-produces the same result — reproducible for demonstrations and viva. Everything it
+produces the same result, so it is reproducible for demonstrations and viva. Everything it
 produces is tagged `simulated: true` and the UI shows a **SIMULATED** badge, so it can
 never be mistaken for live data.
 
-Add a key to `.env` and restart — that source switches to live automatically, and the
+Add a key to `.env` and restart, and that source switches to live automatically, and the
 sidebar status changes from `sim` to `live`.
 
 Set `FORCE_DEMO_MODE=true` to force the simulator even when keys are present.
 
 ---
 
-## 2b. Deployment — set up once, then forget it
+## 2b. Deployment: one-time setup
 
 CIMI is fully self-contained: one container, one persistent volume, no database.
-Nothing needs to be re-done after the first setup — the admin account, the JWT signing
+Nothing needs to be re-done after the first setup: the admin account, the JWT signing
 secret and all history live in the volume and survive restarts, reboots and image updates.
 
-### Option A — Docker Compose (recommended, any VPS)
+### Option A: Docker Compose (recommended, any VPS)
 
 ```bash
 git clone <this repo> cimi && cd cimi
@@ -114,16 +118,16 @@ crash and on reboot (`restart: unless-stopped`).
 Updating later is two commands: `git pull && docker compose up -d --build`.
 
 Already running nginx/Apache on the same host? Skip the `tls` profile and add a
-`proxy_pass http://127.0.0.1:3000;` location to your existing site — the app already
+`proxy_pass http://127.0.0.1:3000;` location to your existing site block. The app already
 sets `trust proxy`.
 
-### Option B — Render / Railway / Fly.io
+### Option B: Render / Railway / Fly.io
 
 These platforms detect the `Dockerfile` automatically. Set the environment variables
 from `.env.example` in the platform's dashboard and attach a persistent disk mounted at
 `/app/data`. Without a persistent disk the store resets on every deploy.
 
-### Option C — bare Node.js with a process manager
+### Option C: bare Node.js with a process manager
 
 ```bash
 npm ci --omit=dev
@@ -166,18 +170,18 @@ provider keys.
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
-│  PRESENTATION — Tailwind CSS single-page app (public/)           │
+│  PRESENTATION · Tailwind CSS single-page app (public/)           │
 │  Login (JWT + MFA) · Dashboard · IoC Lookup · Threat Correlation │
 │  Log Analysis · Threat Intelligence Feeds · Settings             │
 └───────────────────────────────┬──────────────────────────────────┘
                                 │ REST + Bearer JWT
 ┌───────────────────────────────▼──────────────────────────────────┐
-│  APPLICATION — Node.js / Express (src/)                          │
+│  APPLICATION · Node.js / Express (src/)                          │
 │  ┌────────────────────────────────────────────────────────────┐  │
 │  │ Routes: auth · ioc · correlation · logs · feeds · dashboard │  │
 │  │ Middleware: JWT auth · rate limiting · Helmet · CORS        │  │
 │  ├────────────────────────────────────────────────────────────┤  │
-│  │ Aggregation service — parallel fan-out + composite scoring  │  │
+│  │ Aggregation service · parallel fan-out + composite scoring  │  │
 │  │ STIX 2.1 normaliser · MITRE ATT&CK mapper                   │  │
 │  │ Correlation engine · Log analyser · CERT-In scraper         │  │
 │  │ In-memory TTL cache (15 min default, 6 h for CISA KEV)      │  │
@@ -185,7 +189,7 @@ provider keys.
 └───────────────┬──────────────────────────────┬───────────────────┘
                 │                              │
 ┌───────────────▼──────────────┐  ┌────────────▼───────────────────┐
-│ DATA — flat-file JSON store  │  │ EXTERNAL SOURCES               │
+│ DATA · flat-file JSON store  │  │ EXTERNAL SOURCES               │
 │ users.json · ioc_history.json│  │ VirusTotal · AbuseIPDB · OTX   │
 │ log_reports.json             │  │ CISA KEV · CERT-In             │
 │ scrypt-hashed credentials    │  │                                │
@@ -195,7 +199,7 @@ provider keys.
 ### Request flow for a single IoC lookup
 
 1. Analyst submits an indicator on the **IoC Lookup** page.
-2. The API auto-detects the type — IP / domain / URL / MD5 / SHA-1 / SHA-256 / CVE.
+2. The API auto-detects the type: IP / domain / URL / MD5 / SHA-1 / SHA-256 / CVE.
 3. The aggregation service queries every applicable source **in parallel**, falling back to
    cache (including stale cache) when a source is rate-limited.
 4. Results are normalised into STIX 2.1 observables, blended into a weighted composite
@@ -204,7 +208,7 @@ provider keys.
 
 ### Composite scoring
 
-Sources are blended by weight — VirusTotal 0.45, AbuseIPDB 0.30, OTX 0.25 — normalised
+Sources are blended by weight (VirusTotal 0.45, AbuseIPDB 0.30, OTX 0.25), normalised
 over the sources that actually answered, so a rate-limited provider reduces *confidence*
 rather than dragging the *score* to zero. Two independent malicious votes add a +12
 corroboration bonus, three add a further +8, and a CISA KEV hit (exploited in the wild)
@@ -218,14 +222,14 @@ Verdict bands: **≥65 malicious · 30–64 suspicious · <30 clean.**
 
 ### Security Dashboard
 KPI tiles, a 14-day stacked verdict-trend chart, verdict donut, geographic distribution,
-top ATT&CK techniques and indicator-type split — all computed from the analyst's own
+top ATT&CK techniques and indicator-type split, all computed from the analyst's own
 lookup history, with no additional data entry. Charts are hand-built SVG: no chart
 library, no CDN.
 
 ### IoC Lookup
 Single and bulk (up to 25) indicator screening. Shows a source-wise breakdown with each
 provider's raw statistics, the blended verdict, the ATT&CK mapping with the evidence that
-matched, a 14-day reputation timeline, and a live preview of the STIX 2.1 bundle —
+matched, a 14-day reputation timeline, and a live preview of the STIX 2.1 bundle.
 downloadable for SOAR/SIEM ingestion.
 
 ### Threat Correlation
@@ -247,14 +251,58 @@ CERT-In advisories, the CISA KEV catalog, OTX pulses, and a **feed-health view**
 each source on availability, volume and freshness. Advisories can be exported as a STIX
 2.1 bundle of `vulnerability` SDOs.
 
+### Watchlist
+Save indicators to watch. They are re-screened every scheduler interval (hourly by
+default) and the last 20 scores are kept as a trend line. If a verdict gets worse (clean →
+suspicious → malicious) the owner gets an email; alerts can be switched off per indicator.
+Each analyst sees only their own watchlist (up to 50 entries).
+
+### Reports
+Lookup, correlation and log-analysis results, plus the activity log, have a **Download PDF
+report** button. It opens the browser's print dialog with a print stylesheet that turns the
+result into a white, paper-friendly page with a header naming the analyst and the time.
+
+### Admin
+Visible only to the `admin` role:
+* **Accounts**: list users with status (active, unconfirmed, disabled), MFA and last
+  sign-in; disable (which also ends their sessions), re-enable, resend the confirmation
+  link or delete. Admins cannot disable or delete themselves, and the last admin is kept.
+* **Sign-up switch**: open or close self-service registration without a restart.
+* **Activity log**: sign-ins (including failures and lockouts), sign-ups, password changes
+  and resets, sign-outs, lookups, watchlist alerts and admin actions, with IP addresses.
+  Never contains passwords, tokens or codes.
+* **Clear all lookup history** (analysts can clear only their own).
+
 ### Security
-* **JWT** sessions — HS256, implemented directly on `node:crypto` (no `jsonwebtoken`
+* **JWT** sessions: HS256, implemented directly on `node:crypto` (no `jsonwebtoken`
   dependency), with timing-safe signature comparison.
+* **Session cookie, not browser storage.** The token is sent only as an `HttpOnly`,
+  `SameSite=Strict` cookie (`Secure` over HTTPS). Page scripts cannot read it, other sites
+  cannot send it, and nothing about the account is kept in `localStorage`. API responses
+  are `Cache-Control: no-store`.
+* **Email confirmation.** Sign-up asks for an email address and sends a one-time link that
+  expires in 24 hours. Only a SHA-256 hash of the link's code is stored. Accounts cannot
+  sign in until confirmed. The code travels in the URL fragment (`#token=`), so it never
+  reaches server logs or `Referer` headers.
+* Without SMTP settings, confirmation links are printed in the server terminal so local
+  installs still work. See the email block in `.env.example`.
 * **scrypt** password hashing (N=16384, r=8, p=1) with per-user salts; the login path does
   equivalent work for unknown users to prevent account enumeration.
 * **TOTP MFA** (RFC 6238) with ±1 step drift tolerance, also dependency-free.
+* **Default password must be changed.** Signing in with the README's default admin
+  password gives a session that can only reach the change-password endpoint.
+* **Password policy**: at least 8 characters, three of lowercase / uppercase / digits /
+  symbols (or 16+ characters), not a common password, not containing the username or
+  email. A live strength meter shows the same rules while typing.
+* **Forgot password**: emails a one-time reset link valid for 30 minutes, hashed at rest.
+  Resetting or changing a password signs out every other session.
+* **Server-side session control**: every request re-checks the account. Sign-out revokes
+  that token, "Sign out everywhere" and password changes end all sessions, and disabled
+  accounts are cut off immediately.
+* **Lockout**: 5 wrong passwords for the same login name pause sign-in for 15 minutes.
+  Unknown names are tracked the same way, so a lockout never confirms an account exists.
 * **Helmet** security headers with a strict Content-Security-Policy.
-* **Rate limiting** — 300 requests / 15 min globally, 20 / 15 min on auth endpoints.
+* **Rate limiting**: 300 requests / 15 min globally, 20 / 15 min on auth endpoints.
 
 ---
 
@@ -284,38 +332,64 @@ Example pattern for an IP indicator:
 
 ## 6. API reference
 
-All endpoints except `/api/health` and `/api/auth/*` require
-`Authorization: Bearer <token>`.
+All endpoints except `/api/health` and `/api/auth/*` require a session. The browser app
+uses the `cimi_session` cookie set by `/api/auth/login`. Scripted clients can keep that
+cookie (`curl -c jar -b jar …`) or send it as `Authorization: Bearer <token>`.
 
 ### Auth
 | Method | Path | Purpose |
 |---|---|---|
-| POST | `/api/auth/login` | `{username, password, mfaToken?}` → `{token, user}` or `{mfaRequired:true}` |
-| POST | `/api/auth/register` | create an analyst account |
+| POST | `/api/auth/login` | `{username, password, mfaToken?}` (username or email) → sets the session cookie, returns `{user}`; or `{mfaRequired:true}`; `403 EMAIL_UNVERIFIED` until confirmed |
+| POST | `/api/auth/register` | `{username, email, password}` → creates an unconfirmed account and emails a link |
+| POST | `/api/auth/verify-email` | `{token}` from the emailed link → confirms the account |
+| POST | `/api/auth/resend-verification` | `{login}` → sends a fresh link (same reply whether or not the account exists) |
+| POST | `/api/auth/forgot-password` | `{login}` → emails a reset link (same reply whether or not the account exists) |
+| POST | `/api/auth/reset-password` | `{token, password}` → sets the password and ends all sessions |
+| POST | `/api/auth/change-password` | `{currentPassword, newPassword}` → ends other sessions, issues a fresh cookie |
+| POST | `/api/auth/logout` | revokes this session and clears the cookie |
+| POST | `/api/auth/logout-all` | ends every session for the account |
 | GET | `/api/auth/me` | current session user |
 | POST | `/api/auth/mfa/setup` | returns a TOTP secret + `otpauth://` URL |
-| POST | `/api/auth/mfa/confirm` | `{token}` — enables MFA |
+| POST | `/api/auth/mfa/confirm` | `{token}`, enables MFA |
 | POST | `/api/auth/mfa/disable` | `{password}` |
 
 ### Indicators
 | Method | Path | Purpose |
 |---|---|---|
-| POST | `/api/ioc/lookup` | `{indicator, type?}` — single lookup |
-| POST | `/api/ioc/bulk` | `{indicators: []}` — up to 25 |
+| POST | `/api/ioc/lookup` | `{indicator, type?}`, single lookup |
+| POST | `/api/ioc/bulk` | `{indicators: []}`, up to 25 |
 | GET | `/api/ioc/detect?value=` | type-detection helper |
 | GET | `/api/ioc/history?limit=&verdict=` | lookup history |
-| DELETE | `/api/ioc/history` | clear history |
+| DELETE | `/api/ioc/history?scope=all` | clear your own history (`scope=all`: everyone's, admin only) |
 | POST | `/api/ioc/stix` | STIX 2.1 bundle for one or more indicators |
 
 ### Analysis
 | Method | Path | Purpose |
 |---|---|---|
-| POST | `/api/correlation` | `{indicators: []}` — nodes, edges, clusters |
+| POST | `/api/correlation` | `{indicators: []}`, nodes, edges, clusters |
 | GET | `/api/correlation/history?limit=` | correlate recent lookups |
-| POST | `/api/logs/analyse` | `{content, fileName?}` — extract + screen |
+| POST | `/api/logs/analyse` | `{content, fileName?}`, extract + screen |
 | GET | `/api/logs/reports` | past log reports |
 | GET | `/api/logs/reports/:id` | one report |
 | GET | `/api/dashboard?days=14` | full dashboard payload |
+
+### Watchlist
+| Method | Path | Purpose |
+|---|---|---|
+| GET | `/api/watchlist` | your watched indicators |
+| POST | `/api/watchlist` | `{indicator, note?}`, add and screen once |
+| POST | `/api/watchlist/:id/check` | re-screen now |
+| PATCH | `/api/watchlist/:id` | `{alerts: true/false}` |
+| DELETE | `/api/watchlist/:id` | stop watching |
+
+### Admin (admin role only)
+| Method | Path | Purpose |
+|---|---|---|
+| GET | `/api/admin/users` | all accounts (no secrets) |
+| POST | `/api/admin/users/:id/disable` · `/enable` · `/resend-verification` | account actions |
+| DELETE | `/api/admin/users/:id` | delete an account |
+| GET | `/api/admin/audit?limit=&event=&actor=` | activity log |
+| GET / PUT | `/api/admin/settings` | `{registrationEnabled}` |
 
 ### Feeds
 | Method | Path | Purpose |
@@ -346,7 +420,7 @@ curl -s localhost:3000/api/ioc/lookup \
 
 CERT-In publishes vulnerability notes from a Java servlet endpoint protected by
 request-pattern and rate-limiting controls, which surface as intermittent
-`RemoteDisconnected` errors — the principal engineering risk identified in the synopsis.
+`RemoteDisconnected` errors. This was the principal engineering risk identified in the synopsis.
 
 `src/services/providers/certin.js` addresses this with:
 
@@ -356,7 +430,7 @@ request-pattern and rate-limiting controls, which surface as intermittent
   on 4xx responses other than 429;
 * a tolerant HTML table parser that pulls advisory IDs (`CIVN-`/`CIAD-`), titles,
   severities, dates and CVE references;
-* **graceful degradation** — if the endpoint is blocked or the markup changes, the module
+* **graceful degradation**: if the endpoint is blocked or the markup changes, the module
   serves the last good cached result, or a representative offline advisory set flagged
   `simulated: true` with the reason shown in the UI. Downstream modules never break.
 
@@ -394,7 +468,7 @@ cimi/
 │   ├── index.html               # SPA shell
 │   ├── css/app.css
 │   ├── js/{api,charts,app}.js
-│   └── vendor/tailwind.js       # vendored — works offline
+│   └── vendor/tailwind.js       # vendored, works offline
 ├── data/                        # JSON store (created at runtime)
 └── tests/smoke.test.js          # 43 checks
 ```
@@ -411,7 +485,7 @@ cimi/
 * **Bounded concurrency.** Bulk lookups use a 4-worker pool so a 25-indicator batch does
   not burst past VirusTotal's 4 req/min free-tier ceiling all at once.
 * **ATT&CK is gated on the verdict.** Techniques describe adversary behaviour, so an
-  indicator no source flagged gets no technique mapping — an incidental keyword in a pulse
+  indicator no source flagged gets no technique mapping. An incidental keyword in a pulse
   title must never tell an analyst that a benign IP is running ransomware.
 * **History is bounded.** `ioc_history.json` keeps the newest 5,000 entries and
   `log_reports.json` the newest 200, so the flat files stay a sensible size.
@@ -422,7 +496,7 @@ cimi/
 
 | Symptom | Cause / fix |
 |---|---|
-| `EADDRINUSE` | Port 3000 is taken — set `PORT=3001` in `.env`. |
+| `EADDRINUSE` | Port 3000 is taken Set `PORT=3001` in `.env`. |
 | All sources show `sim` | No API keys in `.env`. Expected; add keys to go live. |
 | CERT-In shows "degraded" | The endpoint is rate-limiting or blocking. The offline set is shown; try `?refresh=true` later. |
 | Signed out after restart | The `data/` directory (which holds the auto-generated `jwt.secret`) was wiped or is not on a persistent volume. |
@@ -438,13 +512,13 @@ cimi/
 4. OASIS CTI TC (2021). *STIX Version 2.1 and TAXII Version 2.1 Specifications.*
 5. CISA (2026). *Known Exploited Vulnerabilities Catalog.* https://www.cisa.gov/known-exploited-vulnerabilities-catalog
 6. CERT-In (2026). *Vulnerability Notes and Security Advisories.* https://www.cert-in.org.in
-7. VirusTotal API v3 — https://docs.virustotal.com/reference/overview
-8. AbuseIPDB API — https://docs.abuseipdb.com/
-9. AlienVault OTX API — https://otx.alienvault.com/api
+7. VirusTotal API v3: https://docs.virustotal.com/reference/overview
+8. AbuseIPDB API: https://docs.abuseipdb.com/
+9. AlienVault OTX API: https://otx.alienvault.com/api
 10. Chismon, D. and Ruks, M. (2015). *Threat Intelligence: Collecting, Analysing, Evaluating.* MWR InfoSecurity / CERT-UK.
 
 ---
 
 ## License
 
-MIT — academic project, G H Raisoni College of Engineering & Management, Nagpur.
+MIT. Academic project, G H Raisoni College of Engineering & Management, Nagpur.

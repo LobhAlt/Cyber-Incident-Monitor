@@ -5,6 +5,7 @@ const config = require('../config');
 const aggregator = require('../services/aggregator');
 const stix = require('../services/stix');
 const store = require('../services/store');
+const audit = require('../services/audit');
 const indicatorUtils = require('../utils/indicators');
 const { requireAuth } = require('../middleware/auth');
 const { asyncHandler } = require('../middleware/errors');
@@ -26,6 +27,7 @@ router.post(
 
     const result = await aggregator.lookupIndicator(indicator, { type });
     await aggregator.recordHistory(result, req.user);
+    await audit.log('ioc.lookup', { req, target: result.indicator, detail: `${result.verdict} (${result.score})` });
     return res.json(result);
   })
 );
@@ -53,6 +55,7 @@ router.post(
     for (const result of results) {
       if (!result.error) await aggregator.recordHistory(result, req.user);
     }
+    await audit.log('ioc.bulk_lookup', { req, detail: `${cleaned.length} indicators` });
 
     return res.json({
       requested: cleaned.length,
@@ -82,12 +85,25 @@ router.get(
   })
 );
 
-/** DELETE /api/ioc/history — clear the analyst's lookup history */
+/**
+ * DELETE /api/ioc/history: analysts clear their own lookups; admins may pass
+ * ?scope=all to clear everyone's.
+ */
 router.delete(
   '/history',
   asyncHandler(async (req, res) => {
-    await store.write('iocHistory', []);
-    res.json({ cleared: true });
+    const all = req.query.scope === 'all';
+    if (all && req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Only an admin can clear every analyst\'s history' });
+    }
+    let removed = 0;
+    await store.update('iocHistory', (list) => {
+      const kept = all ? [] : list.filter((h) => h.userId !== req.user.sub);
+      removed = list.length - kept.length;
+      return kept;
+    });
+    await audit.log('ioc.history_cleared', { req, detail: `${all ? 'all analysts' : 'own history'}, ${removed} entries` });
+    return res.json({ cleared: true, removed, scope: all ? 'all' : 'own' });
   })
 );
 
