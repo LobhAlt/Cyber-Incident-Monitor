@@ -87,6 +87,14 @@ const config = {
   forceHttps: bool(process.env.FORCE_HTTPS, false),
   allowRegistration: bool(process.env.ALLOW_REGISTRATION, true),
 
+  // MongoDB (e.g. Atlas). When set, all data lives in the database instead of
+  // JSON files under data/, so it survives restarts on hosts like Render.
+  mongodb: {
+    uri: (process.env.MONGODB_URI || '').trim(),
+    dbName: (process.env.MONGODB_DB || 'cimi').trim(),
+  },
+  jwtSecretFromEnv: Boolean((process.env.JWT_SECRET || '').trim() && process.env.JWT_SECRET.trim() !== 'change-me-to-a-long-random-string'),
+
   // Session cookie: HttpOnly so page scripts can never read the token.
   sessionCookie: 'cimi_session',
 

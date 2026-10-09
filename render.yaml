@@ -1,0 +1,49 @@
+# Render Blueprint: Dashboard → New → Blueprint → pick this repo.
+# Data is stored in MongoDB Atlas (MONGODB_URI), so the free plan is fine:
+# nothing is lost when the server sleeps, restarts or redeploys.
+services:
+  - type: web
+    name: cimi
+    runtime: node
+    plan: free
+    buildCommand: npm ci --omit=dev
+    startCommand: npm run serve
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: NODE_ENV
+        value: production
+      # Paste your Atlas connection string when Render asks for it.
+      - key: MONGODB_URI
+        sync: false
+      # Your site's public address, e.g. https://cimi.onrender.com (used in email links).
+      - key: PUBLIC_URL
+        sync: false
+      - key: FORCE_HTTPS
+        value: "true"
+      - key: JWT_SECRET
+        generateValue: true
+      - key: DEFAULT_ADMIN_PASSWORD
+        sync: false
+      # Email for account confirmation and password reset (see .env.example).
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        value: "465"
+      - key: SMTP_SECURE
+        value: "true"
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: MAIL_FROM
+        sync: false
+      # Optional: live threat-intelligence sources. Leave blank to use the simulator.
+      - key: VIRUSTOTAL_API_KEY
+        sync: false
+      - key: ABUSEIPDB_API_KEY
+        sync: false
+      - key: OTX_API_KEY
+        sync: false

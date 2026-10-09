@@ -46,7 +46,7 @@ The account is created automatically on first boot.
 Run the test suite at any time:
 
 ```bash
-npm test     # 72 checks: unit + full API + static assets
+npm test     # 80 checks: unit, full API, static assets and MongoDB storage
 ```
 
 ### Requirements
@@ -84,9 +84,9 @@ Set `FORCE_DEMO_MODE=true` to force the simulator even when keys are present.
 
 ## 2b. Deployment: one-time setup
 
-CIMI is fully self-contained: one container, one persistent volume, no database.
-Nothing needs to be re-done after the first setup: the admin account, the JWT signing
-secret and all history live in the volume and survive restarts, reboots and image updates.
+CIMI stores its data either as JSON files under `data/` (the default) or in MongoDB when
+`MONGODB_URI` is set. Use files on a server with a permanent disk (Options A and C). Use
+MongoDB Atlas on hosts whose disk is wiped on restart, such as Render's free plan (Option B).
 
 ### Option A: Docker Compose (recommended, any VPS)
 
@@ -121,11 +121,50 @@ Already running nginx/Apache on the same host? Skip the `tls` profile and add a
 `proxy_pass http://127.0.0.1:3000;` location to your existing site block. The app already
 sets `trust proxy`.
 
-### Option B: Render / Railway / Fly.io
+### Option B: Render (free) + MongoDB Atlas (free)
 
-These platforms detect the `Dockerfile` automatically. Set the environment variables
-from `.env.example` in the platform's dashboard and attach a persistent disk mounted at
-`/app/data`. Without a persistent disk the store resets on every deploy.
+Render's free plan sleeps after about 15 idle minutes and wipes its disk on restart, so
+the data goes to a free MongoDB Atlas cluster instead. The repo includes a `render.yaml`.
+
+**1. Create the database (MongoDB Atlas, about 5 minutes)**
+1. Sign up at <https://www.mongodb.com/cloud/atlas/register> and create a free **M0** cluster.
+   Pick a region close to your Render region (for example Mumbai or Singapore).
+2. **Database Access → Add New Database User**: password authentication, a username such as
+   `cimi`, and a generated password. Role: *Read and write to any database*.
+3. **Network Access → Add IP Address → Allow access from anywhere** (`0.0.0.0/0`). Render's
+   free plan has no fixed outgoing IP, so this is required; the strong password protects it.
+4. **Database → Connect → Drivers**, copy the connection string, and put your password in it:
+   `mongodb+srv://cimi:<password>@cluster0.xxxxx.mongodb.net/?retryWrites=true&w=majority`
+   If the password contains `@ : / ? # [ ]` or `%`, URL-encode those characters.
+
+**2. Deploy on Render**
+1. Push this repo to GitHub, then on <https://dashboard.render.com> choose
+   **New → Blueprint** and select the repo. Render reads `render.yaml`.
+2. Fill in the values it asks for:
+   * `MONGODB_URI`: the Atlas connection string from step 1.
+   * `PUBLIC_URL`: `https://<service-name>.onrender.com` (you can edit it after the first
+     deploy, once you know the address).
+   * `DEFAULT_ADMIN_PASSWORD`: anything; you must change it on first sign-in anyway.
+   * `SMTP_*` and `MAIL_FROM`: needed for confirmation and reset emails. With Gmail, use
+     an app password. Leave blank and the links only appear in Render's **Logs** tab.
+   * API keys: optional.
+3. Click **Apply**. The first build takes a few minutes. The log line
+   `Storage  MongoDB (cimi)` confirms the database is in use.
+4. Open the site and sign in as `analyst` with the admin password you set, then choose a
+   new password.
+
+**Moving your existing local data (optional).** Put `MONGODB_URI` in your local `.env` and run
+`npm run migrate:mongo`. It copies users, history, watchlist, audit log and settings into
+Atlas, and skips anything already there unless you add `--overwrite`.
+
+**Things to know about the free plan**
+* The first visit after the server has slept takes 30–60 seconds to load.
+* The hourly feed refresh and watchlist checks only run while the server is awake.
+* Run a single instance. The server caches database contents in memory, which is only
+  correct when one process owns the data.
+
+The `Dockerfile` also works on Render, Railway or Fly.io if you prefer containers. Either
+set `MONGODB_URI` or attach a persistent disk at `/app/data`.
 
 ### Option C: bare Node.js with a process manager
 
@@ -151,10 +190,15 @@ pm2 start server.js --name cimi && pm2 save && pm2 startup
 
 ### What persists where
 
+With `MONGODB_URI` set, everything below lives in the `cimi_store` collection of the
+database (one document per item, plus the session secret) instead of `data/`.
+
 | Item | Location (in the volume / `data/`) |
 |---|---|
 | Analyst accounts, MFA secrets | `users.json` |
 | Lookup history, log reports | `ioc_history.json`, `log_reports.json` |
+| Watchlist, activity log | `watchlist.json`, `audit_log.json` |
+| Admin settings, signed-out sessions | `settings.json`, `revoked_sessions.json` |
 | JWT signing secret (auto-generated once) | `jwt.secret` |
 
 Back up the volume (`docker run --rm -v cimi-data:/d -v $PWD:/b alpine tar czf /b/cimi-backup.tgz /d`)

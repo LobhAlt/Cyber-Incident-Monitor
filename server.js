@@ -9,6 +9,14 @@ const cisakev = require('./src/services/providers/cisakev');
 const watchlist = require('./src/services/watchlist');
 
 async function bootstrap() {
+  try {
+    await store.init();
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error(`\n[CIMI] Could not connect to MongoDB: ${err.message}\n` +
+      '        Check MONGODB_URI, the database user\'s password, and that Atlas Network Access allows this server.\n');
+    throw err;
+  }
   store.ensureDataDir();
   const admin = await authService.ensureDefaultUser();
 
@@ -28,6 +36,7 @@ async function bootstrap() {
     console.log('');
     console.log(`   ▸ URL           http://localhost:${config.port}`);
     console.log(`   ▸ Environment   ${config.env}`);
+    console.log(`   ▸ Storage       ${store.backend() === 'mongodb' ? `MongoDB (${config.mongodb.dbName})` : `files in ${config.dataDir}`}`);
     console.log(`   ▸ Live sources  ${live.length ? live.join(', ') : 'none (simulator active; add API keys in .env)'}`);
     console.log(`   ▸ Sign in as    ${admin.username} / ${config.defaultAdmin.password}`);
     console.log(`   ▸ Email         ${config.mail.host ? `SMTP via ${config.mail.host}` : 'not configured (confirmation links print here)'}`);
@@ -55,7 +64,7 @@ async function bootstrap() {
   function shutdown(signal) {
     // eslint-disable-next-line no-console
     console.log(`\n[CIMI] ${signal} received, shutting down.`);
-    server.close(() => process.exit(0));
+    server.close(() => store.close().finally(() => process.exit(0)));
     setTimeout(() => process.exit(0), 5000).unref();
   }
   process.on('SIGINT', () => shutdown('SIGINT'));

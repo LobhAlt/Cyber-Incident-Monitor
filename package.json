@@ -11,7 +11,8 @@
     "start": "node scripts/launch.js",
     "serve": "node server.js",
     "dev": "node --watch server.js",
-    "test": "node tests/smoke.test.js"
+    "test": "node tests/smoke.test.js && node tests/store-mongo.test.js",
+    "migrate:mongo": "node scripts/migrate-to-mongo.js"
   },
   "keywords": [
     "threat-intelligence",
@@ -30,6 +31,7 @@
     "express": "^4.19.2",
     "express-rate-limit": "^7.4.0",
     "helmet": "^7.1.0",
+    "mongodb": "^6.21.0",
     "nodemailer": "^6.10.1"
   }
 }
