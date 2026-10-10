@@ -18,18 +18,13 @@ results into a single composite verdict per Indicator of Compromise.
 
 ## 1. Quick start
 
-**Easiest:** double-click **`Start CIMI.command`** (macOS) or **`Start CIMI.bat`** (Windows).
-
-**Or from a terminal:**
-
 ```bash
 npm start
 ```
 
-Either way, the launcher does all the setup on first run. It creates `.env` from
-`.env.example`, installs dependencies, picks a free port if 3000 is taken, and opens the
-dashboard in your browser. In VS Code you can also press **F5** ("Start CIMI").
-Set `OPEN_BROWSER=false` in `.env` to stop it opening a browser tab.
+The launcher does all the setup on first run. It creates `.env` from `.env.example`,
+installs dependencies, picks a free port if 3000 is taken, and opens the dashboard in your
+browser. Set `OPEN_BROWSER=false` in `.env` to stop it opening a browser tab.
 
 Sign in at **http://localhost:3000** with:
 
@@ -85,43 +80,10 @@ Set `FORCE_DEMO_MODE=true` to force the simulator even when keys are present.
 ## 2b. Deployment: one-time setup
 
 CIMI stores its data either as JSON files under `data/` (the default) or in MongoDB when
-`MONGODB_URI` is set. Use files on a server with a permanent disk (Options A and C). Use
-MongoDB Atlas on hosts whose disk is wiped on restart, such as Render's free plan (Option B).
+`MONGODB_URI` is set. Use MongoDB Atlas on hosts whose disk is wiped on restart, such as
+Render's free plan (Option A). Files are fine on a server with a permanent disk (Option B).
 
-### Option A: Docker Compose (recommended, any VPS)
-
-```bash
-git clone <this repo> cimi && cd cimi
-cp .env.example .env          # add your API keys; change DEFAULT_ADMIN_PASSWORD
-docker compose up -d          # → http://<server-ip>:3000
-```
-
-For a public hostname with **automatic HTTPS** (Let's Encrypt), point your domain's A
-record at the server, set these in `.env`:
-
-```
-DOMAIN=cimi.example.com
-PUBLIC_URL=https://cimi.example.com
-FORCE_HTTPS=true
-ALLOW_REGISTRATION=false      # unless you want public sign-ups
-```
-
-and start the TLS profile instead:
-
-```bash
-docker compose --profile tls up -d     # → https://cimi.example.com
-```
-
-Certificates are obtained and renewed automatically by Caddy. The container restarts on
-crash and on reboot (`restart: unless-stopped`).
-
-Updating later is two commands: `git pull && docker compose up -d --build`.
-
-Already running nginx/Apache on the same host? Skip the `tls` profile and add a
-`proxy_pass http://127.0.0.1:3000;` location to your existing site block. The app already
-sets `trust proxy`.
-
-### Option B: Render (free) + MongoDB Atlas (free)
+### Option A: Render (free) + MongoDB Atlas (free)
 
 Render's free plan sleeps after about 15 idle minutes and wipes its disk on restart, so
 the data goes to a free MongoDB Atlas cluster instead. The repo includes a `render.yaml`.
@@ -158,20 +120,13 @@ the data goes to a free MongoDB Atlas cluster instead. The repo includes a `rend
 4. Open the site and sign in as `analyst` with the admin password you set, then choose a
    new password.
 
-**Moving your existing local data (optional).** Put `MONGODB_URI` in your local `.env` and run
-`npm run migrate:mongo`. It copies users, history, watchlist, audit log and settings into
-Atlas, and skips anything already there unless you add `--overwrite`.
-
 **Things to know about the free plan**
 * The first visit after the server has slept takes 30–60 seconds to load.
 * The hourly feed refresh and watchlist checks only run while the server is awake.
 * Run a single instance. The server caches database contents in memory, which is only
   correct when one process owns the data.
 
-The `Dockerfile` also works on Render, Railway or Fly.io if you prefer containers. Either
-set `MONGODB_URI` or attach a persistent disk at `/app/data`.
-
-### Option C: bare Node.js with a process manager
+### Option B: your own server with Node.js and a process manager
 
 ```bash
 npm ci --omit=dev
@@ -190,7 +145,7 @@ pm2 start server.js --name cimi && pm2 save && pm2 startup
 | Storage notice | shown once; becomes an analytics consent prompt when `PLAUSIBLE_DOMAIN` is set |
 | Analytics | optional, cookie-less Plausible; script loads only after the visitor allows it |
 | Spam protection | auth rate limit (20 / 15 min), honeypot field on sign-up, `ALLOW_REGISTRATION=false` to close sign-up |
-| Force HTTPS | `FORCE_HTTPS=true` (301 redirect + HSTS via Helmet); Caddy also redirects at the edge |
+| Force HTTPS | `FORCE_HTTPS=true` (301 redirect + HSTS via Helmet) |
 | Compression | gzip/brotli via `compression` middleware for all responses |
 
 ### What persists where
@@ -198,7 +153,7 @@ pm2 start server.js --name cimi && pm2 save && pm2 startup
 With `MONGODB_URI` set, everything below lives in the `cimi_store` collection of the
 database (one document per item, plus the session secret) instead of `data/`.
 
-| Item | Location (in the volume / `data/`) |
+| Item | Location in `data/` |
 |---|---|
 | Analyst accounts, MFA secrets | `users.json` |
 | Lookup history, log reports | `ioc_history.json`, `log_reports.json` |
@@ -206,8 +161,7 @@ database (one document per item, plus the session secret) instead of `data/`.
 | Admin settings, signed-out sessions | `settings.json`, `revoked_sessions.json` |
 | JWT signing secret (auto-generated once) | `jwt.secret` |
 
-Back up the volume (`docker run --rm -v cimi-data:/d -v $PWD:/b alpine tar czf /b/cimi-backup.tgz /d`)
-and you have everything.
+Back up `data/` (or, with MongoDB, use Atlas's backup tools) and you have everything.
 
 ---
 
@@ -493,7 +447,8 @@ cimi/
 ├── server.js                    # boot, scheduler, graceful shutdown
 ├── package.json
 ├── .env.example
-├── Dockerfile · docker-compose.yml · Caddyfile   # one-command deployment
+├── render.yaml                  # Render deployment blueprint
+├── scripts/launch.js            # npm start: one-step local setup and launch
 ├── src/
 │   ├── app.js                   # Express wiring, Helmet CSP, rate limits
 │   ├── config/index.js          # typed config from .env
@@ -549,7 +504,7 @@ cimi/
 | `EADDRINUSE` | Port 3000 is taken Set `PORT=3001` in `.env`. |
 | All sources show `sim` | No API keys in `.env`. Expected; add keys to go live. |
 | CERT-In shows "degraded" | The endpoint is rate-limiting or blocking. The offline set is shown; try `?refresh=true` later. |
-| Signed out after restart | The `data/` directory (which holds the auto-generated `jwt.secret`) was wiped or is not on a persistent volume. |
+| Signed out after restart | The `data/` directory (which holds the auto-generated `jwt.secret`) was wiped. On hosts without a permanent disk, set `MONGODB_URI` or `JWT_SECRET`. |
 | VirusTotal returns "rate limit exceeded" | Free tier is 4 req/min. Caching mitigates it; wait a minute. |
 
 ---

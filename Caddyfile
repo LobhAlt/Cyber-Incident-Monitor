@@ -1,5 +1,0 @@
-# Automatic HTTPS for CIMI. DOMAIN comes from .env via docker-compose.
-{$DOMAIN} {
-	encode gzip
-	reverse_proxy cimi:3000
-}

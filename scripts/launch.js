@@ -1,9 +1,8 @@
 'use strict';
 
 /**
- * One-step local launcher used by `npm start`, `Start CIMI.command` (macOS)
- * and `Start CIMI.bat` (Windows). It only uses Node built-ins until the
- * dependencies are present, so it works on a fresh clone:
+ * One-step local launcher used by `npm start`. It only uses Node built-ins
+ * until the dependencies are present, so it works on a fresh clone:
  *
  *   1. checks the Node.js version
  *   2. creates .env from .env.example if it is missing
@@ -11,7 +10,7 @@
  *   4. picks the next free port if the configured one is taken
  *   5. starts the server and opens the dashboard in the default browser
  *
- * Set OPEN_BROWSER=false to skip step 5. Docker still runs `node server.js`.
+ * Set OPEN_BROWSER=false to skip step 5. Hosting (Render) runs `node server.js`.
  */
 
 const fs = require('fs');

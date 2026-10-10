@@ -11,8 +11,7 @@
     "start": "node scripts/launch.js",
     "serve": "node server.js",
     "dev": "node --watch server.js",
-    "test": "node tests/smoke.test.js && node tests/store-mongo.test.js && node tests/mailer.test.js",
-    "migrate:mongo": "node scripts/migrate-to-mongo.js"
+    "test": "node tests/smoke.test.js && node tests/store-mongo.test.js && node tests/mailer.test.js"
   },
   "keywords": [
     "threat-intelligence",
