@@ -51,7 +51,7 @@ npm test     # 80 checks: unit, full API, static assets and MongoDB storage
 
 ### Requirements
 
-* **Node.js 18 or newer** (uses the built-in `fetch`). Node 20/22 recommended.
+* **Node.js 20 or newer** (uses the built-in `fetch`). Node 22 recommended.
 * No database server, no build tooling, no bundler. Tailwind is vendored at
   `public/vendor/tailwind.js`, so the interface works fully offline.
 

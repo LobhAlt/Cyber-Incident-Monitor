@@ -34,7 +34,7 @@ function fail(msg) {
 
 // 1. Node version ------------------------------------------------------------
 const major = Number(process.versions.node.split('.')[0]);
-if (major < 18) fail(`CIMI needs Node.js 18 or newer (found ${process.versions.node}). Get it from https://nodejs.org`);
+if (major < 20) fail(`CIMI needs Node.js 20 or newer (found ${process.versions.node}). Get it from https://nodejs.org`);
 
 // 2. .env ------------------------------------------------------------------
 const envFile = path.join(ROOT, '.env');
