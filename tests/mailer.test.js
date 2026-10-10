@@ -7,7 +7,7 @@
  */
 
 process.env.NODE_ENV = 'development';
-process.env.BREVO_API_KEY = 'xkeysib-test-key';
+process.env.BREVO_API_KEY = 'xkeysib-0123456789abcdef-test-key';
 process.env.MAIL_FROM = 'CIMI <cimi.alerts@gmail.com>';
 process.env.SMTP_HOST = '';
 
@@ -44,7 +44,7 @@ async function test(name, fn) {
     const result = await mailer.send({ to: 'riya@example.org', ...msg });
     assert.strictEqual(result.delivery, 'email');
     assert.strictEqual(seen.url, 'https://api.brevo.com/v3/smtp/email');
-    assert.strictEqual(seen.opts.headers['api-key'], 'xkeysib-test-key');
+    assert.strictEqual(seen.opts.headers['api-key'], 'xkeysib-0123456789abcdef-test-key');
     const body = JSON.parse(seen.opts.body);
     assert.deepStrictEqual(body.sender, { name: 'CIMI', email: 'cimi.alerts@gmail.com' });
     assert.deepStrictEqual(body.to, [{ email: 'riya@example.org' }]);

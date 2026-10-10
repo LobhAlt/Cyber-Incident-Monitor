@@ -16,6 +16,16 @@ function int(value, fallback) {
   return Number.isFinite(n) && n > 0 ? n : fallback;
 }
 
+/**
+ * Provider keys are 64+ characters. Anything much shorter (a "-" typed to
+ * fill a required field, "none", "changeme") is treated as no key, so that
+ * source falls back to the simulator instead of failing every lookup.
+ */
+function apiKey(value) {
+  const key = String(value || '').trim();
+  return key.length >= 20 ? key : '';
+}
+
 const ROOT = path.join(__dirname, '..', '..');
 const DATA_DIR = process.env.DATA_DIR
   ? path.resolve(process.env.DATA_DIR)
@@ -63,9 +73,9 @@ const config = {
   },
 
   keys: {
-    virustotal: (process.env.VIRUSTOTAL_API_KEY || '').trim(),
-    abuseipdb: (process.env.ABUSEIPDB_API_KEY || '').trim(),
-    otx: (process.env.OTX_API_KEY || '').trim(),
+    virustotal: apiKey(process.env.VIRUSTOTAL_API_KEY),
+    abuseipdb: apiKey(process.env.ABUSEIPDB_API_KEY),
+    otx: apiKey(process.env.OTX_API_KEY),
   },
 
   cache: {
@@ -108,7 +118,7 @@ const config = {
     pass: process.env.SMTP_PASS || '',
     from: (process.env.MAIL_FROM || '').trim(),
     // Brevo (brevo.com) HTTPS email API. Preferred over SMTP when set.
-    brevoApiKey: (process.env.BREVO_API_KEY || '').trim(),
+    brevoApiKey: apiKey(process.env.BREVO_API_KEY),
   },
   emailVerifyTtlMs: int(process.env.EMAIL_VERIFY_TTL_MS, 24 * 60 * 60 * 1000),
 
