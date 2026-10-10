@@ -52,9 +52,9 @@
 <!-- ======================= LOGIN ======================= -->
 <div id="login-view" class="hidden login-bg min-h-screen items-center justify-center px-4 py-10">
   <div class="w-full max-w-md">
-    <div class="mb-8">
+    <div class="mb-8 text-center">
       <span class="brand-mark brand-mark-lg mb-6"><svg viewBox="0 0 24 24" class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="2" role="img" aria-label="CIMI shield logo"><path d="M12 3l7 3v6c0 4.4-2.9 7.9-7 9-4.1-1.1-7-4.6-7-9V6l7-3z" stroke-linejoin="round"/></svg></span>
-      <p class="eyebrow flex items-center gap-2 mb-2"><span class="live-dot"></span>Threat intelligence · India</p>
+      <p class="eyebrow flex items-center justify-center gap-2 mb-2"><span class="live-dot"></span>Threat intelligence · India</p>
       <h1 class="text-3xl font-bold tracking-tight text-white">Cyber Incident Monitor<span class="text-brand-500">.</span></h1>
       <p class="text-sm text-slate-500 mt-2">One STIX 2.1 verdict per indicator, from five sources.</p>
     </div>
@@ -84,7 +84,7 @@
                  class="field" placeholder="Your password" aria-describedby="login-password-error" />
           <p id="login-password-error" class="field-error hidden" role="alert"></p>
           <div id="signup-meter-slot" class="hidden"></div>
-          <button id="forgot-link" type="button" class="mt-2 text-[11px] text-slate-500 hover:text-white underline underline-offset-2">Forgot password?</button>
+          <button id="forgot-link" type="button" class="block mx-auto mt-3 text-[11px] text-slate-500 hover:text-white underline underline-offset-2">Forgot password?</button>
         </div>
         <!-- Honeypot: invisible to people, tempting to bots. Server ignores signups that fill it. -->
         <div class="hp-field" aria-hidden="true">
@@ -104,19 +104,19 @@
         <p id="signup-terms" class="hidden text-[11px] text-slate-500 text-center">By creating an account you agree to the <a href="/terms.html" class="underline hover:text-brand-400">Terms</a> and <a href="/privacy.html" class="underline hover:text-brand-400">Privacy Policy</a>.</p>
       </form>
 
-      <div id="verify-notice" class="hidden" role="status">
+      <div id="verify-notice" class="hidden text-center" role="status">
         <p class="eyebrow mb-3">Step 2 of 2</p>
         <h2 class="text-lg font-semibold text-white mb-2">Check your email</h2>
         <p class="text-sm text-slate-400 leading-relaxed">We sent a confirmation link to <span id="verify-email" class="text-white break-all"></span>. Open it to activate your account, then sign in. The link expires in 24 hours.</p>
         <p id="verify-console" class="hidden mt-3 text-xs text-warn-400 leading-relaxed">This server has no mail server configured, so the link was printed in the terminal where CIMI is running.</p>
-        <div class="mt-5 flex flex-wrap gap-2">
+        <div class="mt-5 flex flex-wrap justify-center gap-2">
           <button id="verify-resend" type="button" class="btn-ghost">Resend link</button>
           <button id="verify-back" type="button" class="btn-ghost">Back to sign in</button>
         </div>
       </div>
 
       <form id="forgot-form" class="hidden space-y-4" novalidate>
-        <div>
+        <div class="text-center">
           <p class="eyebrow mb-3">Password reset</p>
           <h2 class="text-lg font-semibold text-white mb-2">Forgot your password?</h2>
           <p class="text-sm text-slate-400 leading-relaxed">Enter your username or email. If it matches an account with an email address, we will send a reset link that works for 30 minutes.</p>
@@ -126,15 +126,15 @@
           <input id="forgot-login" class="field" autocomplete="username" maxlength="254" required />
         </div>
         <p id="forgot-status" class="hidden text-sm text-slate-300 border-l-2 border-white/40 pl-3" role="status"></p>
-        <div class="flex flex-wrap gap-2">
+        <div class="flex flex-wrap justify-center gap-2">
           <button id="forgot-submit" type="submit" class="btn-primary">Send reset link</button>
           <button id="forgot-back" type="button" class="btn-ghost">Back to sign in</button>
         </div>
-        <p class="text-[11px] text-slate-600 leading-relaxed">The built-in admin account has no email address. If its password is lost, delete <code>data/users.json</code> on the server to recreate it with the default password.</p>
+        <p class="text-[11px] text-slate-600 leading-relaxed text-center">The built-in admin account has no email address. If its password is lost, delete <code>data/users.json</code> on the server to recreate it with the default password.</p>
       </form>
 
       <form id="force-change-form" class="hidden space-y-4" novalidate>
-        <div>
+        <div class="text-center">
           <p class="eyebrow mb-3">One more step</p>
           <h2 class="text-lg font-semibold text-white mb-2">Set your own password</h2>
           <p class="text-sm text-slate-400 leading-relaxed">This account still uses the default password from the README, which anyone can look up. Choose a new one to continue.</p>
@@ -153,7 +153,7 @@
           <input id="force-confirm" type="password" class="field" autocomplete="new-password" required />
         </div>
         <p id="force-error" class="hidden text-sm text-danger-400 bg-danger-500/10 border-l-2 border-danger-500 px-3 py-2" role="alert"></p>
-        <div class="flex flex-wrap gap-2">
+        <div class="flex flex-wrap justify-center gap-2">
           <button id="force-submit" type="submit" class="btn-primary">Save and continue</button>
           <button id="force-cancel" type="button" class="btn-ghost">Sign out</button>
         </div>
@@ -161,10 +161,10 @@
 
       <p id="login-hint" class="mt-4 text-xs text-slate-500 text-center leading-relaxed"></p>
     </div>
-    <p class="mt-6 text-[11px] text-slate-600">
+    <p class="mt-6 text-[11px] text-slate-600 text-center">
       G H Raisoni College of Engineering &amp; Management, Nagpur · CSE (Cyber Security) · Session 2026-27
     </p>
-    <p class="mt-2 text-[11px] text-slate-600">
+    <p class="mt-2 text-[11px] text-slate-600 text-center">
       <a href="/privacy.html" class="hover:text-brand-400 underline underline-offset-2">Privacy Policy</a> · <a href="/terms.html" class="hover:text-brand-400 underline underline-offset-2">Terms &amp; Conditions</a>
     </p>
   </div>
