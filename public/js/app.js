@@ -383,7 +383,7 @@
     $('#tab-signup').setAttribute('aria-selected', String(signup));
     $('#login-submit').textContent = signup ? 'Create account' : 'Sign in';
     $('#login-username-label').textContent = signup ? 'Username' : 'Username or email';
-    $('#login-username').setAttribute('placeholder', signup ? 'e.g. riya.adhe' : 'analyst');
+    $('#login-username').setAttribute('placeholder', signup ? 'e.g. riya.adhe' : 'Username or email');
     $('#email-wrap').classList.toggle('hidden', !signup);
     $('#mfa-wrap').classList.add('hidden');
     hideAuthError();
