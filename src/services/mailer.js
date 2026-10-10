@@ -3,17 +3,38 @@
 const config = require('../config');
 
 /**
- * Outgoing mail. Uses SMTP when SMTP_HOST is set; otherwise prints the
- * message to the server console so a local install can still verify accounts
- * without a mail server. In the test environment messages are also kept in
- * `outbox` so the smoke suite can follow verification links.
+ * Outgoing mail, in order of preference:
+ *  1. Brevo HTTPS API when BREVO_API_KEY is set. Works on hosts that block
+ *     SMTP ports, such as Render's free plan.
+ *  2. SMTP when SMTP_HOST is set (Gmail, Outlook, a company mail server).
+ *  3. Otherwise the message is printed to the server console, so a local
+ *     install can still verify accounts without any mail service.
+ * In the test environment messages are kept in `outbox` instead, so the
+ * smoke suite can follow verification links.
  */
+
+// A mail problem should fail in seconds, not leave a sign-up spinning.
+const TIMEOUT_MS = 15000;
 
 let transport = null;
 const outbox = [];
 
+function provider() {
+  if (config.mail.brevoApiKey) return 'brevo';
+  if (config.mail.host) return 'smtp';
+  return 'console';
+}
+
 function isConfigured() {
-  return Boolean(config.mail.host);
+  return provider() !== 'console';
+}
+
+/** "CIMI <me@gmail.com>" → { name: 'CIMI', email: 'me@gmail.com' } */
+function parseAddress(value) {
+  const raw = String(value || '').trim();
+  const m = /^(.*)<([^>]+)>$/.exec(raw);
+  if (m) return { name: m[1].trim().replace(/^"|"$/g, '') || undefined, email: m[2].trim() };
+  return { email: raw };
 }
 
 function getTransport() {
@@ -26,8 +47,36 @@ function getTransport() {
     port: config.mail.port,
     secure: config.mail.secure,
     auth: config.mail.user ? { user: config.mail.user, pass: config.mail.pass } : undefined,
+    connectionTimeout: TIMEOUT_MS,
+    greetingTimeout: TIMEOUT_MS,
+    socketTimeout: TIMEOUT_MS,
   });
   return transport;
+}
+
+async function sendViaBrevo({ to, subject, text, html }) {
+  const sender = parseAddress(config.mail.from || config.mail.user);
+  if (!sender.email) throw new Error('MAIL_FROM is not set (the verified Brevo sender address)');
+  const res = await fetch('https://api.brevo.com/v3/smtp/email', {
+    method: 'POST',
+    headers: {
+      'api-key': config.mail.brevoApiKey,
+      'content-type': 'application/json',
+      accept: 'application/json',
+    },
+    body: JSON.stringify({
+      sender,
+      to: [{ email: to }],
+      subject,
+      textContent: text,
+      htmlContent: html || undefined,
+    }),
+    signal: AbortSignal.timeout(TIMEOUT_MS),
+  });
+  if (!res.ok) {
+    const detail = await res.text().catch(() => '');
+    throw new Error(`Brevo rejected the email (HTTP ${res.status}): ${detail.slice(0, 300)}`);
+  }
 }
 
 async function send({ to, subject, text, html }) {
@@ -37,10 +86,11 @@ async function send({ to, subject, text, html }) {
     return { delivery: 'test' };
   }
 
-  if (!isConfigured()) {
+  const via = provider();
+  if (via === 'console') {
     /* eslint-disable no-console */
     console.log('');
-    console.log('  ┌─ Email (SMTP not configured, printed here instead) ───────────');
+    console.log('  ┌─ Email (no mail service configured, printed here instead) ────');
     console.log(`  │ To:      ${to}`);
     console.log(`  │ Subject: ${subject}`);
     text.split('\n').forEach((line) => console.log(`  │ ${line}`));
@@ -48,6 +98,11 @@ async function send({ to, subject, text, html }) {
     console.log('');
     /* eslint-enable no-console */
     return { delivery: 'console' };
+  }
+
+  if (via === 'brevo') {
+    await sendViaBrevo({ to, subject, text, html });
+    return { delivery: 'email' };
   }
 
   await getTransport().sendMail({
@@ -132,4 +187,4 @@ function watchlistAlertEmail({ username, indicator, from, to, score, link }) {
   return { subject: `CIMI alert: ${indicator} is now ${to}`, text, html };
 }
 
-module.exports = { send, verificationEmail, passwordResetEmail, watchlistAlertEmail, isConfigured, outbox };
+module.exports = { send, verificationEmail, passwordResetEmail, watchlistAlertEmail, isConfigured, provider, parseAddress, outbox };

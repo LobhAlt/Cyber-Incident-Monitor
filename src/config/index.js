@@ -98,8 +98,8 @@ const config = {
   // Session cookie: HttpOnly so page scripts can never read the token.
   sessionCookie: 'cimi_session',
 
-  // Outgoing mail for account verification. Without SMTP_HOST the link is
-  // printed to the server console instead of being emailed.
+  // Outgoing mail for account verification and password reset. Without
+  // BREVO_API_KEY or SMTP_HOST the link is printed to the server console.
   mail: {
     host: (process.env.SMTP_HOST || '').trim(),
     port: int(process.env.SMTP_PORT, 587),
@@ -107,6 +107,8 @@ const config = {
     user: (process.env.SMTP_USER || '').trim(),
     pass: process.env.SMTP_PASS || '',
     from: (process.env.MAIL_FROM || '').trim(),
+    // Brevo (brevo.com) HTTPS email API. Preferred over SMTP when set.
+    brevoApiKey: (process.env.BREVO_API_KEY || '').trim(),
   },
   emailVerifyTtlMs: int(process.env.EMAIL_VERIFY_TTL_MS, 24 * 60 * 60 * 1000),
 

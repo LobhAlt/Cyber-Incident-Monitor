@@ -46,7 +46,7 @@ The account is created automatically on first boot.
 Run the test suite at any time:
 
 ```bash
-npm test     # 80 checks: unit, full API, static assets and MongoDB storage
+npm test     # 85 checks: unit, full API, static assets, MongoDB storage and email
 ```
 
 ### Requirements
@@ -145,8 +145,13 @@ the data goes to a free MongoDB Atlas cluster instead. The repo includes a `rend
    * `PUBLIC_URL`: `https://<service-name>.onrender.com` (you can edit it after the first
      deploy, once you know the address).
    * `DEFAULT_ADMIN_PASSWORD`: anything; you must change it on first sign-in anyway.
-   * `SMTP_*` and `MAIL_FROM`: needed for confirmation and reset emails. With Gmail, use
-     an app password. Leave blank and the links only appear in Render's **Logs** tab.
+   * `BREVO_API_KEY` and `MAIL_FROM`: needed for confirmation and reset emails. Render's
+     free plan blocks SMTP ports, so Gmail SMTP will not work there; use
+     [Brevo](https://www.brevo.com) (free, 300 emails a day) instead. Sign up, add and verify
+     your sender address under **Senders, Domains & Dedicated IPs → Senders**, then create a
+     key under **SMTP & API → API Keys**. Set `MAIL_FROM` to `CIMI <the verified address>`
+     and leave the `SMTP_*` values blank. Without any of these, links appear in Render's
+     **Logs** tab.
    * API keys: optional.
 3. Click **Apply**. The first build takes a few minutes. The log line
    `Storage  MongoDB (cimi)` confirms the database is in use.
@@ -328,8 +333,9 @@ Visible only to the `admin` role:
   expires in 24 hours. Only a SHA-256 hash of the link's code is stored. Accounts cannot
   sign in until confirmed. The code travels in the URL fragment (`#token=`), so it never
   reaches server logs or `Referer` headers.
-* Without SMTP settings, confirmation links are printed in the server terminal so local
-  installs still work. See the email block in `.env.example`.
+* Email goes through Brevo's HTTPS API when `BREVO_API_KEY` is set, otherwise SMTP when
+  `SMTP_HOST` is set. With neither, links are printed in the server terminal so local
+  installs still work. Sending gives up after 15 seconds instead of hanging.
 * **scrypt** password hashing (N=16384, r=8, p=1) with per-user salts; the login path does
   equivalent work for unknown users to prevent account enumeration.
 * **TOTP MFA** (RFC 6238) with ±1 step drift tolerance, also dependency-free.

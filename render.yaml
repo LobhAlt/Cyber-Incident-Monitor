@@ -27,7 +27,11 @@ services:
         generateValue: true
       - key: DEFAULT_ADMIN_PASSWORD
         sync: false
-      # Email for account confirmation and password reset (see .env.example).
+      # Email for account confirmation and password reset. Render's free plan
+      # blocks SMTP ports, so use Brevo's HTTPS API: set BREVO_API_KEY and
+      # MAIL_FROM (a sender verified in Brevo). Leave the SMTP_* values blank.
+      - key: BREVO_API_KEY
+        sync: false
       - key: SMTP_HOST
         sync: false
       - key: SMTP_PORT

@@ -7,6 +7,7 @@ const authService = require('./src/services/auth');
 const certin = require('./src/services/providers/certin');
 const cisakev = require('./src/services/providers/cisakev');
 const watchlist = require('./src/services/watchlist');
+const mailer = require('./src/services/mailer');
 
 async function bootstrap() {
   try {
@@ -39,7 +40,8 @@ async function bootstrap() {
     console.log(`   ▸ Storage       ${store.backend() === 'mongodb' ? `MongoDB (${config.mongodb.dbName})` : `files in ${config.dataDir}`}`);
     console.log(`   ▸ Live sources  ${live.length ? live.join(', ') : 'none (simulator active; add API keys in .env)'}`);
     console.log(`   ▸ Sign in as    ${admin.username} / ${config.defaultAdmin.password}`);
-    console.log(`   ▸ Email         ${config.mail.host ? `SMTP via ${config.mail.host}` : 'not configured (confirmation links print here)'}`);
+    const mailVia = { brevo: 'Brevo API', smtp: `SMTP via ${config.mail.host}`, console: 'not configured (confirmation links print here)' }[mailer.provider()];
+    console.log(`   ▸ Email         ${mailVia}`);
     console.log('');
     /* eslint-enable no-console */
   });
