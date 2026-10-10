@@ -93,7 +93,8 @@
   function kpiTile(label, value, hint, accent) {
     return '<div class="card card-pad">' +
       '<p class="text-[11px] uppercase tracking-wider text-slate-500">' + esc(label) + '</p>' +
-      '<p class="mt-1.5 text-2xl font-semibold tabular-nums" style="color:' + (accent || C.PALETTE.label) + '">' + esc(value) + '</p>' +
+      '<p class="mt-1.5 text-2xl font-semibold tabular-nums" style="color:' + (accent || C.PALETTE.label) + '"' +
+        (typeof value === 'number' ? ' data-count="' + value + '"' : '') + '>' + esc(value) + '</p>' +
       (hint ? '<p class="text-[11px] text-slate-600 mt-0.5">' + esc(hint) + '</p>' : '') +
       '</div>';
   }
@@ -140,7 +141,21 @@
 
   var authMode = 'signin';
 
+  var loginGlobe = null;
+
   function showLogin() {
+    var host = $('#login-globe');
+    if (!loginGlobe && host && window.CimiGlobe) {
+      // Decorative: a few common source countries, arcs ending in India.
+      loginGlobe = window.CimiGlobe.mount(host, {
+        label: 'Rotating globe with arcs ending in India',
+        points: [
+          { code: 'RU', value: 3, malicious: true }, { code: 'CN', value: 3, malicious: true },
+          { code: 'NL', value: 2 }, { code: 'US', value: 2 }, { code: 'VN', value: 1, malicious: true },
+          { code: 'BR', value: 1 }, { code: 'IR', value: 1 }, { code: 'SG', value: 1 },
+        ],
+      });
+    }
     $('#app-view').classList.add('hidden');
     var view = $('#login-view');
     view.classList.remove('hidden');
@@ -530,7 +545,8 @@
           }).join('') +
         '</div>');
 
-      var geo = card('Geographic distribution', 'Source countries of screened indicators',
+      var geo = card('Threat origins', 'Source countries of screened indicators. Arcs end in India; red means at least one malicious verdict. Drag to spin',
+        '<div class="globe-card"><div class="globe-wrap" id="dash-globe"></div><div>' +
         C.barList(data.geography.map(function (g) {
           return {
             label: g.countryName + ' (' + g.countryCode + ')',
@@ -538,7 +554,7 @@
             suffix: g.malicious ? '· ' + g.malicious + ' malicious' : '',
             color: g.malicious > 0 ? C.PALETTE.malicious : C.PALETTE.accent,
           };
-        }), { empty: 'No geolocated indicators yet. Run an IP lookup.' }));
+        }), { empty: 'No geolocated indicators yet. Run an IP lookup.' }) + '</div></div>');
 
       var techniques = card('Top MITRE ATT&CK techniques', 'Mapped from correlated indicator evidence',
         C.barList(data.topTechniques.map(function (t) {
@@ -578,8 +594,19 @@
         '<div class="grid grid-cols-1 xl:grid-cols-3 gap-3 mt-3">' +
           '<div class="xl:col-span-2">' + trend + '</div>' + donut +
         '</div>' +
-        '<div class="grid grid-cols-1 md:grid-cols-3 gap-3 mt-3">' + geo + techniques + types + '</div>' +
+        '<div class="mt-3">' + geo + '</div>' +
+        '<div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">' + techniques + types + '</div>' +
         '<div class="mt-3">' + alerts + '</div>';
+
+      var globeHost = $('#dash-globe');
+      if (globeHost && window.CimiGlobe) {
+        window.CimiGlobe.mount(globeHost, {
+          label: 'Globe showing ' + data.geography.length + ' source countries of screened indicators',
+          points: data.geography.map(function (g) {
+            return { code: g.countryCode, value: g.total, malicious: g.malicious > 0 };
+          }),
+        });
+      }
 
       var seedBtn = $('#seed-demo');
       if (seedBtn) {
@@ -1558,6 +1585,99 @@
     }).catch(function (err) { target.innerHTML = errorBox(err.message); });
   }
 
+  // ======================= theme =======================
+
+  var THEME_KEY = 'cimi-theme';
+
+  function currentTheme() {
+    return document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+  }
+
+  function applyTheme(theme, remember) {
+    var root = document.documentElement;
+    root.classList.add('theme-switching');
+    root.setAttribute('data-theme', theme);
+    if (remember) { try { localStorage.setItem(THEME_KEY, theme); } catch (e) { /* private mode */ } }
+    var meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute('content', theme === 'light' ? '#ffffff' : '#000000');
+    $$('[data-theme-toggle]').forEach(function (btn) {
+      var label = theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode';
+      btn.title = label;
+      btn.setAttribute('aria-label', label);
+    });
+    window.dispatchEvent(new CustomEvent('cimi:theme', { detail: theme }));
+    setTimeout(function () { root.classList.remove('theme-switching'); }, 300);
+  }
+
+  function toggleTheme() {
+    applyTheme(currentTheme() === 'light' ? 'dark' : 'light', true);
+    // SVG charts bake colours in when drawn, so redraw the open page.
+    if (state.user && !$('#app-view').classList.contains('hidden')) renderPage();
+  }
+
+  // ======================= scroll effects =======================
+
+  var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var revealObserver = null;
+
+  /** Header progress bar: how far down the page you are. */
+  function updateScrollProgress() {
+    var doc = document.documentElement;
+    var max = doc.scrollHeight - window.innerHeight;
+    var progress = max > 0 ? Math.min(1, Math.max(0, window.scrollY / max)) : 1;
+    doc.style.setProperty('--scroll-progress', progress.toFixed(3));
+  }
+
+  /** Cards ease in once, the first time they scroll into view. */
+  function revealCards(root) {
+    if (reduceMotion || !window.IntersectionObserver) return;
+    if (!revealObserver) {
+      revealObserver = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (!entry.isIntersecting) return;
+          entry.target.classList.add('in-view');
+          revealObserver.unobserve(entry.target);
+          countUp(entry.target);
+        });
+      }, { rootMargin: '0px 0px -40px 0px', threshold: 0.05 });
+    }
+    $$('.card:not([data-revealed])', root).forEach(function (el, i) {
+      el.setAttribute('data-revealed', '1');
+      el.classList.add('reveal');
+      el.style.transitionDelay = Math.min(i, 6) * 40 + 'ms';
+      revealObserver.observe(el);
+    });
+  }
+
+  /** KPI numbers count up from zero when their card appears. */
+  function countUp(scope) {
+    $$('[data-count]', scope).forEach(function (el) {
+      var target = Number(el.getAttribute('data-count'));
+      el.removeAttribute('data-count');
+      if (!isFinite(target) || target <= 0 || reduceMotion) return;
+      var start = performance.now(), duration = 700;
+      (function tick(now) {
+        var t = Math.min(1, (now - start) / duration);
+        el.textContent = Math.round(target * (1 - Math.pow(1 - t, 3)));
+        if (t < 1) requestAnimationFrame(tick);
+      })(start);
+    });
+  }
+
+  function initScrollEffects() {
+    window.addEventListener('scroll', updateScrollProgress, { passive: true });
+    window.addEventListener('resize', updateScrollProgress);
+    // Pages render asynchronously, so watch for new cards as they arrive.
+    var pageRoot = $('#page-root');
+    if (window.MutationObserver) {
+      new MutationObserver(function () {
+        revealCards(pageRoot);
+        updateScrollProgress();
+      }).observe(pageRoot, { childList: true, subtree: true });
+    }
+    updateScrollProgress();
+  }
+
   // ======================= boot =======================
 
   /** Drops everything held in memory about the signed-in analyst. */
@@ -1614,6 +1734,21 @@
     $('#sidebar-toggle').addEventListener('click', openSidebar);
     $('#sidebar-backdrop').addEventListener('click', closeSidebar);
     $('#refresh-btn').addEventListener('click', function () { renderPage(); });
+    $$('[data-theme-toggle]').forEach(function (btn) { btn.addEventListener('click', toggleTheme); });
+    applyTheme(currentTheme(), false);
+    // Follow the device setting live, unless the person picked a theme here.
+    if (window.matchMedia) {
+      var mq = window.matchMedia('(prefers-color-scheme: light)');
+      var follow = function (e) {
+        var saved = null;
+        try { saved = localStorage.getItem(THEME_KEY); } catch (err) { /* ignore */ }
+        if (saved) return;
+        applyTheme(e.matches ? 'light' : 'dark', false);
+        if (state.user && !$('#app-view').classList.contains('hidden')) renderPage();
+      };
+      if (mq.addEventListener) mq.addEventListener('change', follow);
+    }
+    initScrollEffects();
 
     window.addEventListener('hashchange', function () {
       var page = location.hash.replace('#', '');

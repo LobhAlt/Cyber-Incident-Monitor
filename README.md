@@ -147,6 +147,9 @@ pm2 start server.js --name cimi && pm2 save && pm2 startup
 | Spam protection | auth rate limit (20 / 15 min), honeypot field on sign-up, `ALLOW_REGISTRATION=false` to close sign-up |
 | Force HTTPS | `FORCE_HTTPS=true` (301 redirect + HSTS via Helmet) |
 | Compression | gzip/brotli via `compression` middleware for all responses |
+| Light and dark mode | follows the device setting until the toggle (top right) is used; the choice is remembered |
+| 3D globe | `public/js/globe.js`, a dependency-free canvas globe. On the dashboard it plots real source countries from your lookups, with arcs to India; drag to spin |
+| Motion | cards ease in on scroll, KPI numbers count up, header progress bar; all off when the device asks for reduced motion |
 
 ### What persists where
 

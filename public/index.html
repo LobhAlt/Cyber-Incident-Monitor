@@ -7,6 +7,15 @@
   <meta name="description" content="Screen IPs, domains, URLs, file hashes and CVEs against VirusTotal, AbuseIPDB, AlienVault OTX, CISA KEV and CERT-In, and get one STIX 2.1 verdict per indicator." />
   <meta name="robots" content="index, follow" />
   <meta name="theme-color" content="#000000" />
+  <script>
+    // Pick the theme before first paint: saved choice, else the device setting.
+    (function () {
+      var t = null;
+      try { t = localStorage.getItem('cimi-theme'); } catch (e) {}
+      if (t !== 'light' && t !== 'dark') t = window.matchMedia && matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', t);
+    })();
+  </script>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
   <meta property="og:type" content="website" />
@@ -51,9 +60,15 @@
 
 <!-- ======================= LOGIN ======================= -->
 <div id="login-view" class="hidden login-bg min-h-screen items-center justify-center px-4 py-10">
-  <div class="w-full max-w-md">
+  <button type="button" class="theme-toggle theme-toggle-floating" data-theme-toggle aria-label="Switch to light mode" title="Switch to light mode">
+        <svg aria-hidden="true" class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20.5 14.5A8.5 8.5 0 019.5 3.5a8.5 8.5 0 1011 11z" stroke-linejoin="round"/></svg>
+        <svg aria-hidden="true" class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" stroke-linecap="round"/></svg>
+      </button>
+  <div class="w-full max-w-md login-card-enter">
     <div class="mb-8 text-center">
-      <span class="brand-mark brand-mark-lg mb-6"><svg viewBox="0 0 24 24" class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="2" role="img" aria-label="CIMI shield logo"><path d="M12 3l7 3v6c0 4.4-2.9 7.9-7 9-4.1-1.1-7-4.6-7-9V6l7-3z" stroke-linejoin="round"/></svg></span>
+      <div class="globe-hero" id="login-globe">
+        <span class="brand-mark"><svg viewBox="0 0 24 24" class="h-[18px] w-[18px]" fill="none" stroke="currentColor" stroke-width="2" role="img" aria-label="CIMI shield logo"><path d="M12 3l7 3v6c0 4.4-2.9 7.9-7 9-4.1-1.1-7-4.6-7-9V6l7-3z" stroke-linejoin="round"/></svg></span>
+      </div>
       <p class="eyebrow flex items-center justify-center gap-2 mb-2"><span class="live-dot"></span>Threat intelligence · India</p>
       <h1 class="text-3xl font-bold tracking-tight text-white">Cyber Incident Monitor<span class="text-brand-500">.</span></h1>
       <p class="text-sm text-slate-500 mt-2">One STIX 2.1 verdict per indicator, from five sources.</p>
@@ -249,6 +264,10 @@
         </div>
         <div class="ml-auto flex items-center gap-2">
           <span id="demo-badge" class="hidden text-[10px] font-semibold uppercase tracking-wider px-2 py-1 border border-brand-500/50 text-brand-400">Simulated data</span>
+          <button type="button" class="theme-toggle" data-theme-toggle aria-label="Switch to light mode" title="Switch to light mode">
+        <svg aria-hidden="true" class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20.5 14.5A8.5 8.5 0 019.5 3.5a8.5 8.5 0 1011 11z" stroke-linejoin="round"/></svg>
+        <svg aria-hidden="true" class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" stroke-linecap="round"/></svg>
+      </button>
           <button id="refresh-btn" class="btn-ghost text-xs">
             <svg aria-hidden="true" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 11a8 8 0 10-2.3 5.7M20 5v6h-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
             Refresh
@@ -268,7 +287,7 @@
 </div>
 
 <div id="consent" class="consent hidden" role="dialog" aria-live="polite" aria-label="Storage and analytics notice">
-  <p>CIMI sets one essential cookie to keep you signed in. Page scripts cannot read it, and it ends when you sign out. The only thing kept in this browser's local storage is your answer to this notice. <span id="consent-analytics-text" class="hidden">The operator also uses cookie-less, anonymous page-view analytics, which run only if you allow them.</span> See the <a href="/privacy.html">Privacy Policy</a>.</p>
+  <p>CIMI sets one essential cookie to keep you signed in. Page scripts cannot read it, and it ends when you sign out. The only things kept in this browser's local storage are your answer to this notice and your light or dark mode choice. <span id="consent-analytics-text" class="hidden">The operator also uses cookie-less, anonymous page-view analytics, which run only if you allow them.</span> See the <a href="/privacy.html">Privacy Policy</a>.</p>
   <div class="consent-actions">
     <button id="consent-accept" type="button" class="btn-primary">OK</button>
     <button id="consent-essential" type="button" class="btn-ghost hidden">Essential only</button>
@@ -278,6 +297,7 @@
 <div id="toast-root" class="fixed bottom-5 right-5 z-50 space-y-2 w-80 max-w-[calc(100vw-2.5rem)]"></div>
 
 <script src="/js/password.js"></script>
+<script src="/js/globe.js"></script>
 <script src="/js/charts.js"></script>
 <script src="/js/api.js"></script>
 <script src="/js/app.js"></script>

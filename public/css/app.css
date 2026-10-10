@@ -2,8 +2,10 @@
    Plain CSS so the interface still renders sensibly even if the Tailwind
    runtime is slow to boot.
 
-   THEME: minimal black and red. One palette only — pure black surfaces,
-   white/grey text, a single red accent. Verdicts stay readable without
+   THEME: minimal black and red, with a matching light palette selected by
+   data-theme="light" on <html> (set before first paint from the saved choice
+   or the device setting). Dark: pure black surfaces, white/grey text, one red
+   accent. Light: white surfaces, near-black text, the same red. Verdicts stay readable without
    leaving the palette: malicious = red, suspicious = amber, clean = white,
    unknown = grey. The Tailwind config in index.html maps its ink / brand /
    slate / white scales onto these variables, so utility classes in the
@@ -53,6 +55,48 @@
   --btn-primary-text: #ffffff;
   --radius: 4px;
   --line: rgb(var(--white) / .08);
+  --globe-dot: rgba(255,255,255,.22);
+  --globe-grid: rgba(255,255,255,.07);
+  --globe-rim: rgba(255,255,255,.18);
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+  --ink-900: 255 255 255;
+  --ink-850: 250 250 250;
+  --ink-800: 243 243 244;
+  --ink-700: 232 232 234;
+  --ink-600: 214 214 218;
+  --brand-400: 200 16 36;
+  --brand-500: 214 18 38;
+  --brand-600: 176 12 30;
+  --slate-200: 17 17 17;
+  --slate-300: 40 40 40;
+  --slate-400: 82 82 82;
+  --slate-500: 100 100 100;
+  --slate-600: 112 112 112;
+  --white: 0 0 0;
+  --danger-400: 200 16 36;
+  --danger-500: 214 18 38;
+  --warn-400: 166 76 6;
+  --warn-500: 194 98 10;
+  --safe-400: 40 40 40;
+  --safe-500: 70 70 70;
+  --chart-accent: #d61226;
+  --chart-malicious: #d61226;
+  --chart-suspicious: #c2620a;
+  --chart-clean: #3f3f46;
+  --chart-unknown: #b4b4bb;
+  --chart-grid: rgba(0,0,0,0.08);
+  --chart-axis: #6b6b6b;
+  --chart-label: #171717;
+  --chart-node-stroke: #ffffff;
+  --shadow: 0 12px 32px rgba(0,0,0,.12);
+  --scroll-thumb: #d4d4d8;
+  --scroll-thumb-hover: #d61226;
+  --globe-dot: rgba(0,0,0,.28);
+  --globe-grid: rgba(0,0,0,.08);
+  --globe-rim: rgba(0,0,0,.2);
 }
 
 html, body { background: rgb(var(--ink-900)); color: rgb(var(--slate-200)); }
@@ -78,7 +122,7 @@ body {
 }
 .field::placeholder { color: rgb(var(--slate-600)); }
 .field:hover { border-color: rgb(var(--white) / 0.18); }
-.field:focus { border-color: rgb(var(--brand-500)); background: #000; }
+.field:focus { border-color: rgb(var(--brand-500)); background: rgb(var(--ink-900)); }
 textarea.field { resize: vertical; min-height: 7rem; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.8rem; line-height: 1.5; }
 select.field { appearance: none; background-image: linear-gradient(45deg, transparent 50%, rgb(var(--slate-500)) 50%), linear-gradient(135deg, rgb(var(--slate-500)) 50%, transparent 50%); background-position: calc(100% - 18px) 55%, calc(100% - 13px) 55%; background-size: 5px 5px, 5px 5px; background-repeat: no-repeat; padding-right: 2rem; }
 
@@ -166,7 +210,7 @@ select.field { appearance: none; background-image: linear-gradient(45deg, transp
 .skeleton { background: linear-gradient(90deg, rgb(var(--white) / .03) 25%, rgb(var(--white) / .07) 37%, rgb(var(--white) / .03) 63%); background-size: 400% 100%; animation: shimmer 1.4s ease infinite; border-radius: var(--radius); }
 @keyframes shimmer { 0% { background-position: 100% 0; } 100% { background-position: 0 0; } }
 
-.spinner { display:inline-block; width: 1rem; height: 1rem; border: 2px solid rgb(255 255 255 / .3); border-top-color: #fff; border-radius: 50%; animation: spin .7s linear infinite; }
+.spinner { display:inline-block; width: 1rem; height: 1rem; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: spin .7s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
 .toast { border-radius: var(--radius); padding: .75rem .95rem; font-size: .8rem; box-shadow: var(--shadow); border: 1px solid rgb(var(--white) / .1); border-left: 2px solid rgb(var(--white) / .4); background: rgb(var(--ink-800)); color: rgb(var(--slate-200)); animation: slide-in .2s ease; }
@@ -188,7 +232,7 @@ select.field { appearance: none; background-image: linear-gradient(45deg, transp
 #login-view.is-visible { display: flex; }
 
 /* login page: plain black with a red rule along the top */
-.login-bg { background: #000; border-top: 3px solid rgb(var(--brand-500)); }
+.login-bg { background: rgb(var(--ink-900)); border-top: 3px solid rgb(var(--brand-500)); }
 
 /* top accent line on the app header */
 .accent-line { position: absolute; left: 0; right: 0; top: 0; height: 2px; background: rgb(var(--brand-500)); }
@@ -232,7 +276,42 @@ select.field { appearance: none; background-image: linear-gradient(45deg, transp
 .doc-code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 4.5rem; font-weight: 700; color: rgb(var(--brand-500)); margin: 0 0 .5rem; line-height: 1; letter-spacing: -.04em; }
 .doc .btn-primary { text-decoration: none; color: var(--btn-primary-text); }
 
+/* --- theme toggle ------------------------------------------------------------ */
+.theme-toggle {
+  display: inline-grid; place-items: center; width: 2rem; height: 2rem;
+  border-radius: var(--radius); border: 1px solid rgb(var(--white) / .12);
+  background: transparent; color: rgb(var(--slate-300)); cursor: pointer;
+  transition: border-color .15s, color .15s;
+}
+.theme-toggle:hover { border-color: rgb(var(--brand-500)); color: rgb(var(--white)); }
+.theme-toggle svg { width: 1rem; height: 1rem; }
+.theme-toggle .icon-sun { display: none; }
+:root[data-theme="light"] .theme-toggle .icon-sun { display: block; }
+:root[data-theme="light"] .theme-toggle .icon-moon { display: none; }
+.theme-toggle-floating { position: fixed; top: 1rem; right: 1rem; z-index: 50; }
+html.theme-switching, html.theme-switching * { transition: background-color .25s ease, border-color .25s ease, color .25s ease !important; }
+
+/* --- 3D globe ------------------------------------------------------------------ */
+.globe { display: block; width: 100%; height: 100%; cursor: grab; touch-action: pan-y; }
+.globe:active { cursor: grabbing; }
+.globe-hero { width: 15rem; height: 15rem; margin: 0 auto 1.25rem; position: relative; }
+.globe-hero .brand-mark { position: absolute; left: 50%; bottom: -.25rem; transform: translateX(-50%); }
+.globe-card { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1rem; }
+@media (min-width: 640px) { .globe-card { grid-template-columns: 15rem minmax(0, 1fr); align-items: center; } }
+.globe-card .globe-wrap { width: 15rem; height: 15rem; max-width: 100%; margin: 0 auto; }
+
+/* --- scroll effects -------------------------------------------------------------- */
+/* Header progress bar: width follows how far the page is scrolled. */
+.accent-line { transform-origin: left center; transform: scaleX(var(--scroll-progress, 1)); transition: transform .08s linear; }
+/* Cards ease in the first time they enter the viewport. Only applied by JS,
+   so everything stays visible if scripts fail. */
+.reveal { opacity: 0; transform: translateY(14px); transition: opacity .45s ease, transform .45s cubic-bezier(.2,.7,.2,1); }
+.reveal.in-view { opacity: 1; transform: none; }
+.login-card-enter { animation: rise .5s cubic-bezier(.2,.7,.2,1) both; }
+@keyframes rise { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+
 @media (prefers-reduced-motion: reduce) {
+  .reveal { opacity: 1 !important; transform: none !important; }
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
 
@@ -268,7 +347,8 @@ select.field { appearance: none; background-image: linear-gradient(45deg, transp
   }
   @page { margin: 14mm; }
   html, body { background: #fff !important; color: #111 !important; }
-  #sidebar, #sidebar-backdrop, header, footer, #toast-root, #consent, .no-print, button, input, textarea, select { display: none !important; }
+  #sidebar, #sidebar-backdrop, header, footer, #toast-root, #consent, .no-print, button, input, textarea, select, .globe-wrap { display: none !important; }
+  .reveal { opacity: 1 !important; transform: none !important; }
   #app-view > div { display: block !important; }
   #page-root { padding: 0 !important; max-width: none !important; }
   .print-only { display: block; }

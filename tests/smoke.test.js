@@ -803,7 +803,7 @@ async function test(name, fn) {
   });
 
   await test('reset and confirmation pages are served', async () => {
-    for (const page of ['/reset.html', '/verify.html', '/js/reset.js', '/js/verify.js']) {
+    for (const page of ['/reset.html', '/verify.html', '/js/reset.js', '/js/verify.js', '/js/globe.js']) {
       assert.strictEqual((await fetch(BASE + page)).status, 200, page);
     }
   });
@@ -812,7 +812,8 @@ async function test(name, fn) {
     for (const f of ['/js/app.js', '/js/api.js', '/js/verify.js', '/js/reset.js']) {
       const text = await (await fetch(BASE + f)).text();
       const uses = (text.match(/(localStorage|sessionStorage)\.(setItem|getItem)\(([^)]*)\)/g) || []);
-      uses.forEach((u) => assert.ok(/CONSENT_KEY/.test(u), `${f}: ${u}`));
+      // Only the storage-notice answer and the light/dark choice may be kept in the browser.
+      uses.forEach((u) => assert.ok(/CONSENT_KEY|THEME_KEY/.test(u), `${f}: ${u}`));
     }
   });
 
